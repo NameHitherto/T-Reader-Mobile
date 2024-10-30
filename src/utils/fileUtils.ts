@@ -14,7 +14,6 @@ export const loadBooks = async (directory?: string) => {
   const booksDir = directory ? `${directory}/T-Reader` : `${RNFS.DocumentDirectoryPath}/T-Reader`;
   if (!(await RNFS.exists(booksDir))) {
     await RNFS.mkdir(booksDir);
-    console.log("目录 'T-Reader' 创建成功。");
   } else {
     console.log("目录 'T-Reader' 已存在。");
   }

@@ -17,7 +17,7 @@ const ReaderScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<{ key: string; name: string; params: RouteParams }>();
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation } = useReader();
+  const { goNext, goPrevious, getCurrentLocation, goToLocation, isLoading } = useReader();
   // 当前应用状态
   const appState = useRef(AppState.currentState);
   // 保存书籍加载时的阅读进度
@@ -81,17 +81,14 @@ const ReaderScreen = () => {
       VolumeManager.getVolume().then(result => {
         initialVolume.current = result.volume;
       });
-      console.log('应用从后台切换到前台');
     }
     appState.current = nextAppState;
   };
 
   // 处理音量变化
   const handleVolumeChange = (result: VolumeResult) => {
-    console.log('音量变化', result.volume);
     const now = Date.now();
     if(now - lastVolumeChangeTime.current < THROTTLE_INTERVAL){
-      // 节流
       // 重新将音量设置为初始音量
       VolumeManager.setVolume(initialVolume.current);
       return;
@@ -117,18 +114,17 @@ const ReaderScreen = () => {
   };
 
   const loadBook = async () => {
+    console.log('加载书籍', bookId);
     try {
       let bookConfigData;
       try {
         // 尝试获取云同步配置文件
         const cloudConfigData = await webdavGet(`${bookId}.json`);
         bookConfigData = Buffer.from(cloudConfigData);
-        console.log('使用云同步配置文件');
       } catch (e) {
         // 获取云同步配置文件失败，使用本地配置文件
         const localConfigData = await RNFS.readFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.json`, 'utf8');
         bookConfigData = Buffer.from(localConfigData, 'utf8');
-        console.log('使用本地配置文件');
       }
       const bookConfig = JSON.parse(bookConfigData.toString('utf8'));
 
@@ -136,21 +132,22 @@ const ReaderScreen = () => {
       try {
         // 尝试读取本地书籍信息
         bookData = await RNFS.readFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`, 'base64');
-        console.log('使用本地书籍信息');
       } catch (e) {
         // 读取本地书籍信息失败，尝试获取云同步文件的 EPUB 资源
         const cloudBookData = await webdavGet(`${bookId}.epub`);
         bookData = Buffer.from(cloudBookData).toString('base64');
-        console.log('使用云同步书籍信息');
 
         // 将云同步文件复制到本地
         await RNFS.writeFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`, bookData, 'base64');
-        console.log('云同步书籍信息已复制到本地');
       }
 
       // 恢复阅读进度
       if (bookConfig.location) {
         readerLocation.current = bookConfig.location;
+        // 若阅读器已经加载完成
+        if (!isLoading) {
+          goToLocation(bookConfig.location);
+        }
       }
     } catch (e) {
       console.log(e);
@@ -166,14 +163,11 @@ const ReaderScreen = () => {
     // 转换为JSON字符串
     const bookConfig = JSON.parse(bookConfigData.toString('utf8'));
     if (location) {
-      if(bookConfig.location !== location.end.cfi){
-        console.log('更新阅读进度');
-      };
       // 更新阅读进度
       bookConfig.location = location.end.cfi;
       const jsonString = JSON.stringify(bookConfig);
-      await saveFile(`${bookId}.json`, jsonString);
       await webdavUpload(`${bookId}.json`, jsonString);
+      await saveFile(`${bookId}.json`, jsonString);
     }
   };
 
