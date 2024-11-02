@@ -1,19 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, NativeModules, NativeEventEmitter, DeviceEventEmitter, NativeAppEventEmitter } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
 import { Reader, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
-import { saveFile, readFileByPath, webdavGet, webdavUpload } from '../utils/fileUtils';
-import { VolumeManager, VolumeResult } from 'react-native-volume-manager';
+import { saveFile, webdavGet, webdavUpload } from '../utils/fileUtils';
 import { Buffer } from 'buffer';
 import { useNavigation } from '@react-navigation/native';
+import { getKeyCode, setKeyCode} from '../utils/VolumeModule';
 
 const ReaderScreen = () => {
   type RouteParams = {
     bookId: string;
   };
-
   const navigation = useNavigation();
   const route = useRoute<{ key: string; name: string; params: RouteParams }>();
   const { bookId } = route.params;
@@ -22,12 +21,10 @@ const ReaderScreen = () => {
   const appState = useRef(AppState.currentState);
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
-  // 初始音量
-  const initialVolume = useRef<number>(0);
   // 用于存储上次调用的时间戳
   const lastVolumeChangeTime = useRef<number>(0); 
   // 节流间隔，单位为毫秒
-  const THROTTLE_INTERVAL = 100; 
+  const THROTTLE_INTERVAL = 100;
 
   useEffect(() => {
     // 加载书籍的信息
@@ -38,24 +35,31 @@ const ReaderScreen = () => {
     // 监听应用状态变化
     const appStateListener = AppState.addEventListener('change', handleAppStateChange);
 
-    // 记录初始音量
-    VolumeManager.getVolume().then(result => {
-      initialVolume.current = result.volume;
-    });
-
-    // 禁用系统音量键的默认行为
-    VolumeManager.showNativeVolumeUI({ enabled: false });
-
     // 监听音量键事件
-    const volumeListener = VolumeManager.addVolumeListener(handleVolumeChange);
+    const keyCodeInterval = setInterval(handleVolumeKeyPress, THROTTLE_INTERVAL);
 
     return () => {
       // 移除监听器
       backHandler.remove();
       appStateListener.remove();
-      volumeListener.remove();
+      // 清除定时器
+      clearInterval(keyCodeInterval);
     };
   }, []);
+
+  // 处理物理按键(音量键)事件
+  const handleVolumeKeyPress = () => {
+    getKeyCode().then((keyCode) => {
+      if (keyCode === 24) {
+        // 音量键上
+        goPrevious();
+      } else if (keyCode === 25) {
+        // 音量键下
+        goNext();
+      }
+      setKeyCode(0);
+    });
+  };
 
   // 处理返回键事件
   const handleBackPress = () => {
@@ -77,40 +81,8 @@ const ReaderScreen = () => {
       saveReaderLocation();
     }else if(nextAppState === 'active' && appState.current.match(/inactive|background/)) {
       // 应用从后台切换到前台
-      // 重新更新初始音量
-      VolumeManager.getVolume().then(result => {
-        initialVolume.current = result.volume;
-      });
     }
     appState.current = nextAppState;
-  };
-
-  // 处理音量变化
-  const handleVolumeChange = (result: VolumeResult) => {
-    const now = Date.now();
-    if(now - lastVolumeChangeTime.current < THROTTLE_INTERVAL){
-      // 重新将音量设置为初始音量
-      VolumeManager.setVolume(initialVolume.current);
-      return;
-    }
-    lastVolumeChangeTime.current = now; // 更新时间戳
-    if(initialVolume.current === 0){
-      // 初始音量为0
-      if(result.volume > 0){
-        goPrevious();
-      }else{
-        goNext();
-      }
-    }else{
-      // 初始音量不为0
-      if(result.volume > initialVolume.current){
-        goPrevious();
-      }else if(result.volume < initialVolume.current){
-        goNext();
-      }
-    }
-    // 重新将音量设置为初始音量
-    VolumeManager.setVolume(initialVolume.current);
   };
 
   const loadBook = async () => {
