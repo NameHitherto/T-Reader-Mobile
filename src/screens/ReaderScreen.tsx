@@ -16,13 +16,11 @@ const ReaderScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<{ key: string; name: string; params: RouteParams }>();
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation, goToLocation, isLoading } = useReader();
+  const { goNext, goPrevious, getCurrentLocation, goToLocation } = useReader();
   // 当前应用状态
   const appState = useRef(AppState.currentState);
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
-  // 用于存储上次调用的时间戳
-  const lastVolumeChangeTime = useRef<number>(0); 
   // 节流间隔，单位为毫秒
   const THROTTLE_INTERVAL = 100;
 
@@ -35,7 +33,7 @@ const ReaderScreen = () => {
     // 监听应用状态变化
     const appStateListener = AppState.addEventListener('change', handleAppStateChange);
 
-    // 监听音量键事件
+    // 定时监听音量键事件
     const keyCodeInterval = setInterval(handleVolumeKeyPress, THROTTLE_INTERVAL);
 
     return () => {
@@ -52,10 +50,10 @@ const ReaderScreen = () => {
     getKeyCode().then((keyCode) => {
       if (keyCode === 24) {
         // 音量键上
-        goPrevious();
+        prevPage();
       } else if (keyCode === 25) {
         // 音量键下
-        goNext();
+        nextPage();
       }
       setKeyCode(0);
     });
@@ -74,19 +72,44 @@ const ReaderScreen = () => {
   };
 
   // 处理应用状态变化
-  const handleAppStateChange = (nextAppState: AppStateStatus) => { 
+  const handleAppStateChange = async (nextAppState: AppStateStatus) => { 
     if(nextAppState.match(/inactive|background/) && appState.current === 'active') {
       // 应用从前台切换到后台
+      console.log('应用从前台切换到后台');
       // 保存阅读进度
-      saveReaderLocation();
+      await saveReaderLocation();
     }else if(nextAppState === 'active' && appState.current.match(/inactive|background/)) {
       // 应用从后台切换到前台
+      console.log('应用从后台切换到前台');
     }
     appState.current = nextAppState;
   };
 
+  // 处理翻页/阅读位置变化
+  const handleLocationChanged = () => {
+    // 更新阅读位置
+    const location = getCurrentLocation()?.end.cfi;
+    readerLocation.current = location;
+    // 更新阅读百分比等信息
+  };
+
+  // 处理阅读器加载完成
+  const handleLocationReady = () => {
+    // 阅读器加载完成，跳转到指定位置
+    if (readerLocation.current) {
+      goToLocation(readerLocation.current);
+    }else{
+      // loadBook还未完成，进度还没加载
+      loadBook().then(() => {
+        if(readerLocation.current){
+          goToLocation(readerLocation.current);
+        }
+      });
+    }
+  };
+
   const loadBook = async () => {
-    console.log('加载书籍', bookId);
+    console.log('loadBooking', bookId);
     try {
       let bookConfigData;
       try {
@@ -100,26 +123,17 @@ const ReaderScreen = () => {
       }
       const bookConfig = JSON.parse(bookConfigData.toString('utf8'));
 
-      let bookData;
-      try {
-        // 尝试读取本地书籍信息
-        bookData = await RNFS.readFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`, 'base64');
-      } catch (e) {
-        // 读取本地书籍信息失败，尝试获取云同步文件的 EPUB 资源
-        const cloudBookData = await webdavGet(`${bookId}.epub`);
-        bookData = Buffer.from(cloudBookData).toString('base64');
-
-        // 将云同步文件复制到本地
-        await RNFS.writeFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`, bookData, 'base64');
-      }
-
       // 恢复阅读进度
       if (bookConfig.location) {
         readerLocation.current = bookConfig.location;
-        // 若阅读器已经加载完成
-        if (!isLoading) {
-          goToLocation(bookConfig.location);
-        }
+      }
+
+      if(!await RNFS.exists(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`)) {
+        // 本地不存在该书籍文件，尝试下载云同步文件
+        const cloudBookData = await webdavGet(`${bookId}.epub`);
+        const bookData = Buffer.from(cloudBookData).toString('base64');
+        // 将云同步文件复制到本地
+        await RNFS.writeFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`, bookData, 'base64');
       }
     } catch (e) {
       console.log(e);
@@ -127,16 +141,14 @@ const ReaderScreen = () => {
   };
 
   const saveReaderLocation = async () => {
-    // 获取当前阅读进度,包括cfi、进度百分比等信息
-    const location = getCurrentLocation();
     // 获取本地配置文件
     const localConfigData = await RNFS.readFile(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.json`, 'utf8');
     const bookConfigData = Buffer.from(localConfigData, 'utf8');
     // 转换为JSON字符串
     const bookConfig = JSON.parse(bookConfigData.toString('utf8'));
-    if (location) {
+    if (readerLocation.current) {
       // 更新阅读进度
-      bookConfig.location = location.end.cfi;
+      bookConfig.location = readerLocation.current;
       const jsonString = JSON.stringify(bookConfig);
       await webdavUpload(`${bookId}.json`, jsonString);
       await saveFile(`${bookId}.json`, jsonString);
@@ -151,9 +163,6 @@ const ReaderScreen = () => {
     goNext();
   };
 
-  useEffect(() => {
-  }, []);
-
   return (
     <View style={styles.container}>
       <Reader
@@ -164,9 +173,10 @@ const ReaderScreen = () => {
         enableSwipe={false}
         width={Dimensions.get('window').width}
         height={Dimensions.get('window').height}
-        initialLocation={readerLocation.current}
         allowScriptedContent={true}
         allowPopups={true}
+        onLocationsReady={handleLocationReady}
+        onLocationChange={handleLocationChanged}
       />
       <View style={styles.gestureArea}>
         <TouchableOpacity style={styles.gestureLeft} onPress={prevPage} />

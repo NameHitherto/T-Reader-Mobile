@@ -59,7 +59,7 @@ export const webdavUpload = async (filename: string, contents: string) => {
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
-  console.log('云同步文件上传成功');
+  console.log('webdavUploaded....');
 };
 
 export const webdavGet = async (filename: string) => {
@@ -113,12 +113,10 @@ export const webdavSyncFiles = async (directory?: string) => {
 
   if (!(await RNFS.exists(booksDir))) {
     await RNFS.mkdir(booksDir);
-    console.log("目录 'T-Reader' 创建成功。");
   } else {
     // 清理目录旧文件
     RNFS.unlink(booksDir);
     RNFS.mkdir(booksDir);
-    console.log("目录 'T-Reader' 已存在。");
   }
 
   await Promise.all(files.map(async file => {
