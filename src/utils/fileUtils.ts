@@ -41,7 +41,6 @@ export const deleteBook = async (filename: string, directory?: string) => {
 };
 
 export const readFileByPath = async (filepath: string) => {
-  console.log(`正在打开${filepath}处的文件`);
   const contents = await RNFS.readFile(filepath, 'base64');
   return contents;
 };

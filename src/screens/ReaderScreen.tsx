@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, NativeModules, NativeEventEmitter, DeviceEventEmitter, NativeAppEventEmitter } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
 import { Reader, useReader } from '@epubjs-react-native/core';
@@ -8,17 +8,34 @@ import { saveFile, webdavGet, webdavUpload } from '../utils/fileUtils';
 import { Buffer } from 'buffer';
 import { useNavigation } from '@react-navigation/native';
 import { getKeyCode, setKeyCode} from '../utils/VolumeModule';
+import Modal from 'react-native-modal';
 
 const ReaderScreen = () => {
+  // 菜单弹窗是否显示
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const toggleModal = () => setIsModalVisible(!isModalVisible);
+
+  // 阅读器样式设置
+  const [readerStyle, setReaderStyle] = useState({
+    backgroundColor: '#ffffff',
+    color: '#000000',
+  });
+
+  // 当 readerStyle 发生变化时应用变化，并在组件销毁时保存到本地文件
+  useEffect(() => {
+    applyReaderStyle();
+    return () => {
+      saveReaderStyle();
+    };
+  }, [readerStyle]);
+
   type RouteParams = {
     bookId: string;
   };
   const navigation = useNavigation();
   const route = useRoute<{ key: string; name: string; params: RouteParams }>();
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation, goToLocation } = useReader();
-  // 当前应用状态
-  const appState = useRef(AppState.currentState);
+  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme } = useReader();
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
@@ -27,6 +44,8 @@ const ReaderScreen = () => {
   useEffect(() => {
     // 加载书籍的信息
     loadBook();
+    // 加载阅读器样式设置
+    loadReaderStyle();
     // 监听返回键事件
     const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
@@ -73,16 +92,15 @@ const ReaderScreen = () => {
 
   // 处理应用状态变化
   const handleAppStateChange = async (nextAppState: AppStateStatus) => { 
-    if(nextAppState.match(/inactive|background/) && appState.current === 'active') {
+    if(nextAppState.match(/inactive|background/)) {
       // 应用从前台切换到后台
       console.log('应用从前台切换到后台');
       // 保存阅读进度
       await saveReaderLocation();
-    }else if(nextAppState === 'active' && appState.current.match(/inactive|background/)) {
+    }else if(nextAppState === 'active') {
       // 应用从后台切换到前台
       console.log('应用从后台切换到前台');
     }
-    appState.current = nextAppState;
   };
 
   // 处理翻页/阅读位置变化
@@ -106,6 +124,8 @@ const ReaderScreen = () => {
         }
       });
     }
+    // 恢复阅读器样式,后续可以考虑在阅读器加载的更早时机触发
+    applyReaderStyle();
   };
 
   const loadBook = async () => {
@@ -155,6 +175,35 @@ const ReaderScreen = () => {
     }
   };
 
+  // 保存阅读器样式设置到本地文件
+  const saveReaderStyle = async () => {
+    const jsonString = JSON.stringify(readerStyle);
+    await RNFS.writeFile(`${RNFS.DocumentDirectoryPath}/ReaderConfig.json`, jsonString, 'utf8');
+  };
+
+  // 加载阅读器样式设置
+  const loadReaderStyle = async () => {
+    try {
+      const configData = await RNFS.readFile(`${RNFS.DocumentDirectoryPath}/ReaderConfig.json`, 'utf8');
+      const config = JSON.parse(configData);
+      setReaderStyle(config);
+    } catch (e) {
+      console.log('未找到本地配置文件，使用默认样式');
+    }
+  };
+
+  // 应用阅读器样式
+  const applyReaderStyle = () => {
+    changeTheme({
+      body: {
+        background: readerStyle.backgroundColor,
+      },
+      p: {
+        color: readerStyle.color,
+      }
+    });
+  };
+
   const prevPage = () => {
     goPrevious();
   };
@@ -180,9 +229,38 @@ const ReaderScreen = () => {
       />
       <View style={styles.gestureArea}>
         <TouchableOpacity style={styles.gestureLeft} onPress={prevPage} />
-        <TouchableOpacity style={styles.gestureCenter} onPress={() => console.log('打开菜单')} />
+        <TouchableOpacity style={styles.gestureCenter} onPress={toggleModal} />
         <TouchableOpacity style={styles.gestureRight} onPress={nextPage} />
       </View>
+      <Modal
+        isVisible={isModalVisible}
+        onBackdropPress={toggleModal}
+        onBackButtonPress={toggleModal}
+        style={styles.modal}
+        backdropOpacity={0}
+        animationIn={'fadeInUp'}
+        animationInTiming={350}
+        animationOut={'slideOutDown'}
+        animationOutTiming={350}
+      >
+        <View style={styles.modalContent}>
+          <View style={styles.colorOptions}>
+            <Text style={styles.menuTitle}>主题</Text>
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: '#ffffff' }]}
+              onPress={() => setReaderStyle({ backgroundColor: '#ffffff', color: '#000000' })}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: '#faebd7' }]}
+              onPress={() => setReaderStyle({ backgroundColor: '#faebd7', color: '#000000' })}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: '#000000' }]}
+              onPress={() => setReaderStyle({ backgroundColor: '#000000', color: '#ffffff' })}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -208,6 +286,33 @@ const styles = StyleSheet.create({
   },
   gestureRight: {
     flex: 1,
+  },
+  modal:{
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: '#91d5ff',
+    padding: 20,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  colorOptions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: 10,
+  },
+  menuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  colorButton: {
+    width: 35,
+    height: 35,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#000',
   },
 });
 
