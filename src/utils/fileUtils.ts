@@ -1,5 +1,6 @@
 import RNFS from 'react-native-fs';
 import { DOMParser } from 'xmldom';
+import { Buffer } from 'buffer';
 
 const WEBDAV_URL = 'https://dav.jianguoyun.com/dav/T-Reader/';
 const WEBDAV_USER = '605351778@qq.com';
@@ -32,12 +33,10 @@ export const loadBooks = async (directory?: string) => {
 
 export const deleteBook = async (filename: string, directory?: string) => {
   const path = directory ? `${directory}/T-Reader/${filename}` : `${RNFS.DocumentDirectoryPath}/T-Reader/${filename}`;
-  if (await RNFS.exists(path)) {
-    await RNFS.unlink(path);
-    console.log(`书籍 '${filename}' 删除成功。`);
-  } else {
-    console.log(`书籍 '${filename}' 不存在。`);
-  }
+  await RNFS.unlink(`${path}.epub`);
+  await webdavDelete(`${filename}.epub`);
+  await RNFS.unlink(`${path}.json`);
+  await webdavDelete(`${filename}.json`);
 };
 
 export const readFileByPath = async (filepath: string) => {
@@ -45,6 +44,7 @@ export const readFileByPath = async (filepath: string) => {
   return contents;
 };
 
+// 禁止上传ePub文件，只允许上传JSON文件
 export const webdavUpload = async (filename: string, contents: string) => {
   const response = await fetch(`${WEBDAV_URL}${filename}`, {
     method: 'PUT',
@@ -53,6 +53,23 @@ export const webdavUpload = async (filename: string, contents: string) => {
       'Authorization': 'Basic ' + btoa(`${WEBDAV_USER}:${WEBDAV_PASS}`)
     },
     body: contents
+  });
+
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  console.log('webdavUploaded....');
+};
+
+// 上传EPub文件有效
+export const webdavUploadFile = async (filename: string, contents: string) => {
+  const response = await fetch(`${WEBDAV_URL}${filename}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Authorization': 'Basic ' + btoa(`${WEBDAV_USER}:${WEBDAV_PASS}`)
+    },
+    body: Buffer.from(contents, 'base64')
   });
 
   if (!response.ok) {

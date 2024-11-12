@@ -9,6 +9,7 @@ import { Buffer } from 'buffer';
 import { useNavigation } from '@react-navigation/native';
 import { getKeyCode, setKeyCode} from '../utils/VolumeModule';
 import Modal from 'react-native-modal';
+import LoadingAnimation, {AnimationType} from '../component/LoadingAnimation';
 
 const ReaderScreen = () => {
   // 菜单弹窗是否显示
@@ -40,8 +41,16 @@ const ReaderScreen = () => {
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
   const THROTTLE_INTERVAL = 100;
+  // 加载条样式
+  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingType, setLoadingType] = useState<AnimationType>('roxy');
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
 
   useEffect(() => {
+    // 启动加载条
+    setLoadingType('book');
+    setLoadingMessage('加载书籍中...');
+    setLoading(true);
     // 加载书籍的信息
     loadBook();
     // 加载阅读器样式设置
@@ -226,6 +235,22 @@ const ReaderScreen = () => {
         allowPopups={true}
         onLocationsReady={handleLocationReady}
         onLocationChange={handleLocationChanged}
+        renderOpeningBookComponent={() => 
+          <LoadingAnimation 
+            isVisible={loading} 
+            onBackdropPress={() => {console.log('loading...')}} 
+            animationType={loadingType} 
+            message={loadingMessage}
+          />
+        }
+        renderLoadingFileComponent={() => 
+          <LoadingAnimation 
+            isVisible={loading} 
+            onBackdropPress={() => {console.log('loading...')}} 
+            animationType={loadingType} 
+            message={loadingMessage}
+          />
+        }
       />
       <View style={styles.gestureArea}>
         <TouchableOpacity style={styles.gestureLeft} onPress={prevPage} />
