@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Animated, TouchableWithoutFeedback } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { StatusBar ,View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Animated, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import DocumentPicker from 'react-native-document-picker';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -9,6 +9,9 @@ import { unzip } from 'react-native-zip-archive';
 import { DOMParser } from 'xmldom';
 import Svg, { Path } from 'react-native-svg';
 import LoadingAnimation, {AnimationType} from '../component/LoadingAnimation';
+import {colors} from '../styles/global';
+import FooterTab from '../component/FooterTab';
+import Modal from 'react-native-modal';
 
 type RootStackParamList = {
   Home: undefined;
@@ -33,12 +36,19 @@ interface Book {
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const [books, setBooks] = useState<Book[]>([]);
-  const [focusedBookId, setFocusedBookId] = useState<string | null>(null);
-  const [bookCoverOpacity] = useState(new Animated.Value(1));
-  const [iconScale] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingType, setLoadingType] = useState<AnimationType>('roxy');
   const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState<boolean>(false);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const selectedBook = useMemo(() => {
+    return books.find(book => book.id === selectedBookId);
+  }, [selectedBookId, books]);
+  const bookOptions = [
+    {key: 'open', text: '打开', path: 'M21 4H3a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2M3 19V6h8v13zm18 0h-8V6h8zm-7-9.5h6V11h-6zm0 2.5h6v1.5h-6zm0 2.5h6V16h-6z'},
+    {key: 'del', text: '删除', path: 'M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z'},
+    {key: 'info', text: '详情', path: 'M13 9h-2V7h2zm0 2h-2v6h2zm-1-7c-4.411 0-8 3.589-8 8s3.589 8 8 8s8-3.589 8-8s-3.589-8-8-8m0-2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2'},
+  ]
 
   useEffect(() => {
     loadBooksFromFileSystem();
@@ -233,28 +243,28 @@ const HomeScreen = () => {
     navigation.navigate('Reader', { bookId });
   };
 
+  const handleBookAction = (bookId: string, action: string) => {
+    switch (action) {
+      case 'open':
+        openBook(bookId);
+        break;
+      case 'del':
+        handleBookDel(bookId);
+        break;
+      case 'info':
+        break;
+      default:
+        break
+    }
+  };
+
   const handleLongPress = (bookId: string) => {
-    setFocusedBookId(bookId);
-    bookCoverOpacity.setValue(1);
-    iconScale.setValue(0);
-    Animated.parallel([
-      Animated.timing(bookCoverOpacity, {
-        toValue: 0.3,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(iconScale, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    setIsBottomSheetVisible(true);
+    setSelectedBookId(bookId);
   };
 
   const handleCasualPress = () => {
-    setFocusedBookId(null);
-    bookCoverOpacity.setValue(1);
-    iconScale.setValue(0);
+    
   };
 
   // 删除书籍
@@ -264,89 +274,133 @@ const HomeScreen = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={handleCasualPress}>
-      <View style={styles.container}>
-        <LoadingAnimation animationType={loadingType} isVisible={loading} message={loadingMessage} onBackdropPress={() => console.log("Pretend to Stop")}/>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>全部书籍</Text>
-          <TouchableOpacity onPress={addBook} style={styles.iconButton}>
-            <Svg width="32" height="32" viewBox="0 0 24 24">
-              <Path d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v6.7q-.475-.225-.975-.387T19 11.075V5H5v14h6.05q.075.55.238 1.05t.387.95zm0-3v1V5v6.075V11zm2-1h4.075q.075-.525.238-1.025t.362-.975H7zm0-4h6.1q.8-.75 1.788-1.25T17 11.075V11H7zm0-4h10V7H7zm11 14q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m-.5-2h1v-2.5H21v-1h-2.5V15h-1v2.5H15v1h2.5z"/>
-            </Svg>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={syncFiles} style={styles.iconButton}>
-            <Svg width="32" height="32" viewBox="0 0 24 24">
-              <Path d="M13.03 18c.05.7.21 1.38.47 2h-7c-1.5 0-2.81-.5-3.89-1.57C1.54 17.38 1 16.09 1 14.58q0-1.95 1.17-3.48C3.34 9.57 4 9.43 5.25 9.15c.42-1.53 1.25-2.77 2.5-3.72S10.42 4 12 4c1.95 0 3.6.68 4.96 2.04S19 9.05 19 11h.1c-.74.07-1.45.23-2.1.5V11c0-1.38-.5-2.56-1.46-3.54C14.56 6.5 13.38 6 12 6s-2.56.5-3.54 1.46C7.5 8.44 7 9.62 7 11h-.5c-.97 0-1.79.34-2.47 1.03c-.69.68-1.03 1.5-1.03 2.47s.34 1.79 1.03 2.5c.68.66 1.5 1 2.47 1zM19 13.5V12l-2.25 2.25L19 16.5V15a2.5 2.5 0 0 1 2.5 2.5c0 .4-.09.78-.26 1.12l1.09 1.09c.42-.63.67-1.39.67-2.21c0-2.21-1.79-4-4-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5c0-.4.09-.78.26-1.12l-1.09-1.09c-.42.63-.67 1.39-.67 2.21c0 2.21 1.79 4 4 4V23l2.25-2.25L19 18.5z"/>
-            </Svg>
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          data={books}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.bookContainer}>
-              <TouchableOpacity 
-                style={styles.bookItem} 
-                onPress={() => openBook(item.id)}
-                onLongPress={() => handleLongPress(item.id)}
-                activeOpacity={1}
-              >
-                <Animated.View style={{opacity: item.id === focusedBookId ? bookCoverOpacity : 1, position:'relative'}}>
+    <>
+      <StatusBar 
+        backgroundColor={colors.header}
+        barStyle='dark-content'
+      />
+      <TouchableWithoutFeedback onPress={handleCasualPress}>
+        <View style={styles.container}>
+          <LoadingAnimation animationType={loadingType} isVisible={loading} message={loadingMessage} onBackdropPress={() => console.log("Pretend to Stop")}/>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>书架</Text>
+            <TouchableOpacity onPress={addBook} style={styles.iconButton}>
+              <Svg width="32" height="32" viewBox="0 0 24 24">
+                <Path d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v6.7q-.475-.225-.975-.387T19 11.075V5H5v14h6.05q.075.55.238 1.05t.387.95zm0-3v1V5v6.075V11zm2-1h4.075q.075-.525.238-1.025t.362-.975H7zm0-4h6.1q.8-.75 1.788-1.25T17 11.075V11H7zm0-4h10V7H7zm11 14q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m-.5-2h1v-2.5H21v-1h-2.5V15h-1v2.5H15v1h2.5z"/>
+              </Svg>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={syncFiles} style={styles.iconButton}>
+              <Svg width="32" height="32" viewBox="0 0 24 24">
+                <Path d="M13.03 18c.05.7.21 1.38.47 2h-7c-1.5 0-2.81-.5-3.89-1.57C1.54 17.38 1 16.09 1 14.58q0-1.95 1.17-3.48C3.34 9.57 4 9.43 5.25 9.15c.42-1.53 1.25-2.77 2.5-3.72S10.42 4 12 4c1.95 0 3.6.68 4.96 2.04S19 9.05 19 11h.1c-.74.07-1.45.23-2.1.5V11c0-1.38-.5-2.56-1.46-3.54C14.56 6.5 13.38 6 12 6s-2.56.5-3.54 1.46C7.5 8.44 7 9.62 7 11h-.5c-.97 0-1.79.34-2.47 1.03c-.69.68-1.03 1.5-1.03 2.47s.34 1.79 1.03 2.5c.68.66 1.5 1 2.47 1zM19 13.5V12l-2.25 2.25L19 16.5V15a2.5 2.5 0 0 1 2.5 2.5c0 .4-.09.78-.26 1.12l1.09 1.09c.42-.63.67-1.39.67-2.21c0-2.21-1.79-4-4-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5c0-.4.09-.78.26-1.12l-1.09-1.09c-.42.63-.67 1.39-.67 2.21c0 2.21 1.79 4 4 4V23l2.25-2.25L19 18.5z"/>
+              </Svg>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={books}
+            keyExtractor={item => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.bookContainer}>
+                <TouchableOpacity 
+                  style={styles.bookItem} 
+                  onPress={() => openBook(item.id)}
+                  onLongPress={() => handleLongPress(item.id)}
+                  activeOpacity={0.5}
+                >
                   <Image defaultSource={require('../assets/default_cover.png')} source={{ uri: item.cover }} style={styles.bookCover} />
-                </Animated.View>
-                {item.id === focusedBookId && (
-                  <Animated.View style={{ 
-                    transform: [
-                      { scale: iconScale }
-                    ], 
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    marginTop: -24,
-                    marginLeft: -24
-                  }}>
-                    <TouchableOpacity onPress={() => handleBookDel(item.id)}>
-                      <Svg width="48" height="48" viewBox="0 0 24 24">
-                        <Path d="M7 6v13zm0 15q-.825 0-1.412-.587T5 19V6h-.025q-.425 0-.7-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v3.5q0 .425-.288.713T18 10.5t-.712-.288T17 9.5V6H7v13h2.675q.425 0 .713.288t.287.712q0 .4-.288.7t-.712.3zm3-13q-.425 0-.712.288T9 9v7q0 .425.288.713T10 17t.713-.288T11 16V9q0-.425-.288-.712T10 8m4 0q-.425 0-.712.288T13 9v1.5q0 .425.288.713T14 11.5t.713-.288T15 10.5V9q0-.425-.288-.712T14 8m3 14q-2.075 0-3.537-1.463T12 17t1.463-3.537T17 12q1.025 0 1.938.4t1.587 1.075t1.075 1.588T22 17q0 2.075-1.463 3.538T17 22m.5-5.2v-2.3q0-.2-.15-.35T17 14t-.35.15t-.15.35v2.275q0 .2.075.388t.225.337l1.5 1.5q.15.15.35.15T19 19t.15-.35t-.15-.35z"/>
-                      </Svg>
-                    </TouchableOpacity>
-                  </Animated.View>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.bookTitle}>{item.title}</Text>
+                </TouchableOpacity>
+                <Text style={styles.bookTitle}>{item.title}</Text>
+              </View>
+            )}
+            numColumns={3}
+          />
+          <FooterTab
+            activeTab='home'
+            onTabPress={(key) => console.log(key)}
+          />
+          <Modal
+            isVisible={isBottomSheetVisible}
+            onBackButtonPress={() => setIsBottomSheetVisible(false)}
+            onBackdropPress={() => setIsBottomSheetVisible(false)}
+            backdropOpacity={0.3}
+            statusBarTranslucent={true}
+            deviceHeight={Dimensions.get('screen').height}
+            useNativeDriver={true}
+            hideModalContentWhileAnimating={true}
+            backdropTransitionOutTiming={0}
+            animationIn={'slideInUp'}
+            animationOut={'slideOutDown'}
+            style={{justifyContent: 'flex-end'}}
+          >
+            <View style={styles.bottomSheetView}>
+              <View style={styles.bottomSheetBook}>
+                <View style={styles.bottomSheetBookInfo}>
+                  <Image defaultSource={require('../assets/default_cover.png')} source={{ uri: selectedBook?.cover }} style={styles.bookOptionCover}/>
+                  <View style={styles.bottomSheetBookDetail}>
+                    <Text>{selectedBook?.title}</Text>
+                    <Text style={{fontSize: 12, color: colors.grey}}>{selectedBook?.author}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.bottomSheetOptions}>
+                {bookOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.key}
+                    onPress={() => handleBookAction(selectedBookId!, option.key)}
+                    style={styles.bottomSheetItem}
+                  >
+                    <Svg
+                      width={32}
+                      height={32}
+                      viewBox="0 0 24 24"
+                    >
+                      <Path 
+                        d={option.path}
+                        fill={colors.lightYellow}
+                        stroke={colors.iconStroke}
+                        strokeWidth={0}
+                      />
+                    </Svg>
+                    <Text style={{fontSize: 13}}>{option.text}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          )}
-          numColumns={3}
-        />
-    </View>
-    </TouchableWithoutFeedback>
+          </Modal>
+        </View>
+      </TouchableWithoutFeedback>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    paddingTop: 0,
+    padding: 10,
+    backgroundColor: colors.header,
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     flex: 1,
+    marginLeft: 5,
   },
   iconButton: {
     marginHorizontal: 10,
   },
   bookContainer: {
     alignItems: 'flex-start',
-    margin: 5,
+    paddingTop: 5,
+    padding: 10,
   },
   bookItem: {
     alignItems: 'flex-start',
+    boxShadow: '#555555 0px 0px 3px 0px',
   },
   bookCover: {
     width: 100,
@@ -360,6 +414,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     width: 100,
   },
+  bottomSheetView: {
+    width: '100%',
+    backgroundColor: 'white',
+    padding: 10,
+    flexDirection: 'column',
+    borderRadius: 10,
+  },
+  bottomSheetBook: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start', // space-between
+    alignItems: 'center',
+    borderBottomColor: colors.lightGrey,
+    borderBottomWidth: 1,
+    paddingBottom: 10,
+  },
+  bottomSheetBookInfo: {
+    width: '80%',
+    flexDirection: 'row',
+  },
+  bookOptionCover: {
+    width: 50,
+    height: 75,
+    resizeMode: 'cover',
+  },
+  bottomSheetBookDetail: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 6,
+    marginLeft: 10,
+  },
+  bottomSheetOptions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  bottomSheetItem: {
+    width: 80,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
 });
 
 export default HomeScreen;

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text } from 'react-native';
+import { StatusBar ,View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
 import { Reader, useReader } from '@epubjs-react-native/core';
@@ -277,231 +277,237 @@ const ReaderScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Reader
-        src={`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`}
-        flow='paginated'
-        manager='continuous'
-        fileSystem={useFileSystem}
-        enableSwipe={false}
-        width={Dimensions.get('window').width}
-        height={Dimensions.get('window').height}
-        allowScriptedContent={true}
-        allowPopups={true}
-        onLocationsReady={handleLocationReady}
-        onLocationChange={handleLocationChanged}
-        renderOpeningBookComponent={() => 
-          <LoadingAnimation 
-            isVisible={true} 
-            onBackdropPress={() => {console.log('loading...')}} 
-            animationType={"book"} 
-          />
-        }
-        renderLoadingFileComponent={() => 
-          <LoadingAnimation 
-            isVisible={true} 
-            onBackdropPress={() => {console.log('loading...')}} 
-            animationType={"book"} 
-          />
-        }
+    <>
+      <StatusBar 
+        backgroundColor={readerStyle.backgroundColor}
+        barStyle={readerStyle.color === '#000000' ? 'dark-content' : 'light-content'}
       />
-      <View style={styles.gestureArea}>
-        <TouchableOpacity style={styles.gestureLeft} onPress={prevPage} />
-        <TouchableOpacity style={styles.gestureCenter} onPress={toggleModal} />
-        <TouchableOpacity style={styles.gestureRight} onPress={nextPage} />
-      </View>
-      {/* 菜单 */}
-      <Modal
-        isVisible={isModalVisible}
-        onBackdropPress={toggleModal}
-        onBackButtonPress={toggleModal}
-        style={styles.modal}
-        backdropOpacity={0}
-        animationIn={'fadeInUp'}
-        animationInTiming={350}
-        animationOut={'slideOutDown'}
-        animationOutTiming={350}
-      >
-        <View style={styles.modalContent}>
-          <View style={styles.colorOptions}>
-            <Text style={styles.menuTitle}>主题</Text>
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: '#ffffff' }]}
-              onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#ffffff', color: '#000000' })}
+      <View style={styles.container}>
+        <Reader
+          src={`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`}
+          flow='paginated'
+          manager='continuous'
+          fileSystem={useFileSystem}
+          enableSwipe={false}
+          width={Dimensions.get('window').width}
+          height={Dimensions.get('window').height}
+          allowScriptedContent={true}
+          allowPopups={true}
+          onLocationsReady={handleLocationReady}
+          onLocationChange={handleLocationChanged}
+          renderOpeningBookComponent={() => 
+            <LoadingAnimation 
+              isVisible={true} 
+              onBackdropPress={() => {console.log('loading...')}} 
+              animationType={"book"} 
             />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: '#faebd7' }]}
-              onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#faebd7', color: '#000000' })}
+          }
+          renderLoadingFileComponent={() => 
+            <LoadingAnimation 
+              isVisible={true} 
+              onBackdropPress={() => {console.log('loading...')}} 
+              animationType={"book"} 
             />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: '#000000' }]}
-              onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#000000', color: '#ffffff' })}
-            />
-          </View>
-          <View style={styles.menuRow}>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleToc}>
-              <Svg width="32" height="32" viewBox="0 0 24 24">
-                <Path d="M4 17q-.425 0-.712-.288T3 16t.288-.712T4 15h12q.425 0 .713.288T17 16t-.288.713T16 17zm0-4q-.425 0-.712-.288T3 12t.288-.712T4 11h12q.425 0 .713.288T17 12t-.288.713T16 13zm0-4q-.425 0-.712-.288T3 8t.288-.712T4 7h12q.425 0 .713.288T17 8t-.288.713T16 9zm16 8q-.425 0-.712-.288T19 16t.288-.712T20 15t.713.288T21 16t-.288.713T20 17m0-4q-.425 0-.712-.288T19 12t.288-.712T20 11t.713.288T21 12t-.288.713T20 13m0-4q-.425 0-.712-.288T19 8t.288-.712T20 7t.713.288T21 8t-.288.713T20 9"/>
-              </Svg>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleStyle}>
-              <Svg width="32" height="32" viewBox="0 0 24 24">
-                <Path fillRule='evenodd' d="M13 21v-8h8v8zm2-6h4v4h-4zM3 11V3h8v8zm2-6h4v4H5z" clip-rule="evenodd"/><Path d="M18 6v6h-2V8h-4V6zm-6 12H6v-6h2v4h4z"/>
-              </Svg>
-            </TouchableOpacity>
-          </View>
+          }
+        />
+        <View style={styles.gestureArea}>
+          <TouchableOpacity style={styles.gestureLeft} onPress={prevPage} />
+          <TouchableOpacity style={styles.gestureCenter} onPress={toggleModal} />
+          <TouchableOpacity style={styles.gestureRight} onPress={nextPage} />
         </View>
-      </Modal>
-      {/* 样式抽屉 */}
-      <Modal
-        isVisible={isStyleVisible}
-        onBackdropPress={toggleStyle}
-        onBackButtonPress={toggleStyle}
-        style={styles.styleModal}
-        animationIn={'zoomIn'}
-        animationInTiming={300}
-        animationOut={'zoomOut'}
-        animationOutTiming={300}
-        backdropOpacity={0}
-      >
-        <View style={styles.styleContent}>
-          {/* 字体大小 */}
-          <View style={styles.sliderContainer}>
-            <View style={styles.sliderLabelContainer}>
-              <Text style={styles.sliderLabel}>字体大小</Text>
-              <Text style={styles.sliderValue}>{readerStyle.fontSize}</Text>
-              <View style={styles.controlButton}>
-                <TouchableOpacity 
-                  onPress={() => decrementStyle('fontSize', 1, 12)} 
-                >
-                  <Text style={styles.controlButtonText}>-</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => incrementStyle('fontSize', 1, 24)} 
-                >
-                  <Text style={styles.controlButtonText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.sliderControl}>
-              <Slider
-                style={styles.slider}
-                minimumValue={12}
-                maximumValue={24}
-                step={1}
-                value={readerStyle.fontSize}
-                onValueChange={handleFontSizeChange}
-                minimumTrackTintColor="#1EB1FC"
-                maximumTrackTintColor="#d3d3d3"
-                thumbTintColor="#1EB1FC"
+        {/* 菜单 */}
+        <Modal
+          isVisible={isModalVisible}
+          onBackdropPress={toggleModal}
+          onBackButtonPress={toggleModal}
+          style={styles.modal}
+          backdropOpacity={0}
+          animationIn={'fadeInUp'}
+          animationInTiming={350}
+          animationOut={'slideOutDown'}
+          animationOutTiming={350}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.colorOptions}>
+              <Text style={styles.menuTitle}>主题</Text>
+              <TouchableOpacity
+                style={[styles.colorButton, { backgroundColor: '#ffffff' }]}
+                onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#ffffff', color: '#000000' })}
+              />
+              <TouchableOpacity
+                style={[styles.colorButton, { backgroundColor: '#faebd7' }]}
+                onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#faebd7', color: '#000000' })}
+              />
+              <TouchableOpacity
+                style={[styles.colorButton, { backgroundColor: '#000000' }]}
+                onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#000000', color: '#ffffff' })}
               />
             </View>
+            <View style={styles.menuRow}>
+              <TouchableOpacity style={styles.iconButton} onPress={toggleToc}>
+                <Svg width="32" height="32" viewBox="0 0 24 24">
+                  <Path d="M4 17q-.425 0-.712-.288T3 16t.288-.712T4 15h12q.425 0 .713.288T17 16t-.288.713T16 17zm0-4q-.425 0-.712-.288T3 12t.288-.712T4 11h12q.425 0 .713.288T17 12t-.288.713T16 13zm0-4q-.425 0-.712-.288T3 8t.288-.712T4 7h12q.425 0 .713.288T17 8t-.288.713T16 9zm16 8q-.425 0-.712-.288T19 16t.288-.712T20 15t.713.288T21 16t-.288.713T20 17m0-4q-.425 0-.712-.288T19 12t.288-.712T20 11t.713.288T21 12t-.288.713T20 13m0-4q-.425 0-.712-.288T19 8t.288-.712T20 7t.713.288T21 8t-.288.713T20 9"/>
+                </Svg>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={toggleStyle}>
+                <Svg width="32" height="32" viewBox="0 0 24 24">
+                  <Path fillRule='evenodd' d="M13 21v-8h8v8zm2-6h4v4h-4zM3 11V3h8v8zm2-6h4v4H5z" clip-rule="evenodd"/><Path d="M18 6v6h-2V8h-4V6zm-6 12H6v-6h2v4h4z"/>
+                </Svg>
+              </TouchableOpacity>
+            </View>
           </View>
+        </Modal>
+        {/* 样式抽屉 */}
+        <Modal
+          isVisible={isStyleVisible}
+          onBackdropPress={toggleStyle}
+          onBackButtonPress={toggleStyle}
+          style={styles.styleModal}
+          animationIn={'zoomIn'}
+          animationInTiming={300}
+          animationOut={'zoomOut'}
+          animationOutTiming={300}
+          backdropOpacity={0}
+        >
+          <View style={styles.styleContent}>
+            {/* 字体大小 */}
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderLabelContainer}>
+                <Text style={styles.sliderLabel}>字体大小</Text>
+                <Text style={styles.sliderValue}>{readerStyle.fontSize}</Text>
+                <View style={styles.controlButton}>
+                  <TouchableOpacity 
+                    onPress={() => decrementStyle('fontSize', 1, 12)} 
+                  >
+                    <Text style={styles.controlButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => incrementStyle('fontSize', 1, 24)} 
+                  >
+                    <Text style={styles.controlButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.sliderControl}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={12}
+                  maximumValue={24}
+                  step={1}
+                  value={readerStyle.fontSize}
+                  onValueChange={handleFontSizeChange}
+                  minimumTrackTintColor="#1EB1FC"
+                  maximumTrackTintColor="#d3d3d3"
+                  thumbTintColor="#1EB1FC"
+                />
+              </View>
+            </View>
 
-          {/* 首行缩进 */}
-          <View style={styles.sliderContainer}>
-            <View style={styles.sliderLabelContainer}>
-              <Text style={styles.sliderLabel}>首行缩进</Text>
-              <Text style={styles.sliderValue}>{readerStyle.textIndent}em</Text>
-              <View style={styles.controlButton}>
-                <TouchableOpacity 
-                  onPress={() => decrementStyle('textIndent', 1, 0)} 
-                >
-                  <Text style={styles.controlButtonText}>-</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => incrementStyle('textIndent', 1, 30)} 
-                >
-                  <Text style={styles.controlButtonText}>+</Text>
-                </TouchableOpacity>
+            {/* 首行缩进 */}
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderLabelContainer}>
+                <Text style={styles.sliderLabel}>首行缩进</Text>
+                <Text style={styles.sliderValue}>{readerStyle.textIndent}em</Text>
+                <View style={styles.controlButton}>
+                  <TouchableOpacity 
+                    onPress={() => decrementStyle('textIndent', 1, 0)} 
+                  >
+                    <Text style={styles.controlButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => incrementStyle('textIndent', 1, 30)} 
+                  >
+                    <Text style={styles.controlButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.sliderControl}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={30}
+                  step={1}
+                  value={readerStyle.textIndent}
+                  onValueChange={handleTextIndentChange}
+                  minimumTrackTintColor="#1EB1FC"
+                  maximumTrackTintColor="#d3d3d3"
+                  thumbTintColor="#1EB1FC"
+                />
               </View>
             </View>
-            <View style={styles.sliderControl}>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={30}
-                step={1}
-                value={readerStyle.textIndent}
-                onValueChange={handleTextIndentChange}
-                minimumTrackTintColor="#1EB1FC"
-                maximumTrackTintColor="#d3d3d3"
-                thumbTintColor="#1EB1FC"
-              />
-            </View>
-          </View>
 
-          {/* 内边距 */}
-          <View style={styles.sliderContainer}>
-            <View style={styles.sliderLabelContainer}>
-              <Text style={styles.sliderLabel}>内边距</Text>
-              <Text style={styles.sliderValue}>{readerStyle.padding}px</Text>
-              <View style={styles.controlButton}>
-                <TouchableOpacity 
-                  onPress={() => decrementStyle('padding', 1, 0)} 
-                >
-                  <Text style={styles.controlButtonText}>-</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => incrementStyle('padding', 1, 20)} 
-                >
-                  <Text style={styles.controlButtonText}>+</Text>
-                </TouchableOpacity>
+            {/* 内边距 */}
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderLabelContainer}>
+                <Text style={styles.sliderLabel}>内边距</Text>
+                <Text style={styles.sliderValue}>{readerStyle.padding}px</Text>
+                <View style={styles.controlButton}>
+                  <TouchableOpacity 
+                    onPress={() => decrementStyle('padding', 1, 0)} 
+                  >
+                    <Text style={styles.controlButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => incrementStyle('padding', 1, 20)} 
+                  >
+                    <Text style={styles.controlButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.sliderControl}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={20}
+                  step={1}
+                  value={readerStyle.padding}
+                  onValueChange={handlePaddingChange}
+                  minimumTrackTintColor="#1EB1FC"
+                  maximumTrackTintColor="#d3d3d3"
+                  thumbTintColor="#1EB1FC"
+                />
               </View>
             </View>
-            <View style={styles.sliderControl}>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={20}
-                step={1}
-                value={readerStyle.padding}
-                onValueChange={handlePaddingChange}
-                minimumTrackTintColor="#1EB1FC"
-                maximumTrackTintColor="#d3d3d3"
-                thumbTintColor="#1EB1FC"
-              />
-            </View>
-          </View>
 
-          {/* 行距 */}
-          <View style={styles.sliderContainer}>
-            <View style={styles.sliderLabelContainer}>
-              <Text style={styles.sliderLabel}>行距</Text>
-              <Text style={styles.sliderValue}>{readerStyle.lineHeight}em</Text>
-              <View style={styles.controlButton}>
-                <TouchableOpacity 
-                  onPress={() => decrementStyle('lineHeight', 0.1, 1)} 
-                >
-                  <Text style={styles.controlButtonText}>-</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => incrementStyle('lineHeight', 0.1, 3)} 
-                >
-                  <Text style={styles.controlButtonText}>+</Text>
-                </TouchableOpacity>
+            {/* 行距 */}
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderLabelContainer}>
+                <Text style={styles.sliderLabel}>行距</Text>
+                <Text style={styles.sliderValue}>{readerStyle.lineHeight}em</Text>
+                <View style={styles.controlButton}>
+                  <TouchableOpacity 
+                    onPress={() => decrementStyle('lineHeight', 0.1, 1)} 
+                  >
+                    <Text style={styles.controlButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => incrementStyle('lineHeight', 0.1, 3)} 
+                  >
+                    <Text style={styles.controlButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.sliderControl}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={1}
+                  maximumValue={3}
+                  step={0.1}
+                  value={readerStyle.lineHeight}
+                  onValueChange={(value) => {
+                    const roundedValue = roundToStep(value, 0.1);
+                    handleLineHeightChange(roundedValue);
+                  }}
+                  minimumTrackTintColor="#1EB1FC"
+                  maximumTrackTintColor="#d3d3d3"
+                  thumbTintColor="#1EB1FC"
+                />
               </View>
             </View>
-            <View style={styles.sliderControl}>
-              <Slider
-                style={styles.slider}
-                minimumValue={1}
-                maximumValue={3}
-                step={0.1}
-                value={readerStyle.lineHeight}
-                onValueChange={(value) => {
-                  const roundedValue = roundToStep(value, 0.1);
-                  handleLineHeightChange(roundedValue);
-                }}
-                minimumTrackTintColor="#1EB1FC"
-                maximumTrackTintColor="#d3d3d3"
-                thumbTintColor="#1EB1FC"
-              />
-            </View>
-          </View>
-        </View> 
-      </Modal>
-    </View>
+          </View> 
+        </Modal>
+      </View>
+    </>
   );
 };
 
