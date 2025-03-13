@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { StatusBar ,View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
@@ -11,7 +11,7 @@ import { getKeyCode, setKeyCode} from '../utils/VolumeModule';
 import Modal from 'react-native-modal';
 import LoadingAnimation from '../component/LoadingAnimation';
 import Svg, { Path } from 'react-native-svg';
-import Slider from '@react-native-community/slider';
+import { colors } from '../styles/global';
 
 const ReaderScreen = () => {
   // 菜单弹窗是否显示
@@ -42,6 +42,11 @@ const ReaderScreen = () => {
     lineHeight: 1.5,
   });
 
+  // 黑夜模式
+  const isDarkMode = useMemo(() => {
+    return readerStyle.backgroundColor === '#000000';
+  }, [readerStyle]);
+
   // 当 readerStyle 发生变化时应用变化，并在组件销毁时保存到本地文件
   useEffect(() => {
     applyReaderStyle();
@@ -61,6 +66,13 @@ const ReaderScreen = () => {
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
   const THROTTLE_INTERVAL = 100;
+  // 更多样式设置
+  const moreStyles = [
+    {key: 'fontSize', text: '字号', step: 1, min: 12, max: 24},
+    {key: 'textIndent', text: '首行缩进', step: 1, min: 0, max: 10},
+    {key: 'padding', text: '内边距', step: 1, min: 0, max: 20},
+    {key: 'lineHeight', text: '行距', step: 0.1, min: 1, max: 3},
+  ]
 
   useEffect(() => {
     // 加载书籍的信息
@@ -276,11 +288,20 @@ const ReaderScreen = () => {
     });
   };
 
+  // 切换日间/夜间模式
+  const toggleMode = () => {
+    setReaderStyle(prev => ({
+      ...prev,
+      backgroundColor: prev.backgroundColor === '#000000' ? '#ffffff' : '#000000',
+      color: prev.color === '#000000' ? '#ffffff' : '#000000',
+    }));
+  };
+
   return (
     <>
       <StatusBar 
         backgroundColor={readerStyle.backgroundColor}
-        barStyle={readerStyle.color === '#000000' ? 'dark-content' : 'light-content'}
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
       />
       <View style={styles.container}>
         <Reader
@@ -327,33 +348,55 @@ const ReaderScreen = () => {
           animationOut={'slideOutDown'}
           animationOutTiming={350}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.colorOptions}>
-              <Text style={styles.menuTitle}>主题</Text>
-              <TouchableOpacity
-                style={[styles.colorButton, { backgroundColor: '#ffffff' }]}
-                onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#ffffff', color: '#000000' })}
-              />
-              <TouchableOpacity
-                style={[styles.colorButton, { backgroundColor: '#faebd7' }]}
-                onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#faebd7', color: '#000000' })}
-              />
-              <TouchableOpacity
-                style={[styles.colorButton, { backgroundColor: '#000000' }]}
-                onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#000000', color: '#ffffff' })}
-              />
-            </View>
-            <View style={styles.menuRow}>
-              <TouchableOpacity style={styles.iconButton} onPress={toggleToc}>
-                <Svg width="32" height="32" viewBox="0 0 24 24">
-                  <Path d="M4 17q-.425 0-.712-.288T3 16t.288-.712T4 15h12q.425 0 .713.288T17 16t-.288.713T16 17zm0-4q-.425 0-.712-.288T3 12t.288-.712T4 11h12q.425 0 .713.288T17 12t-.288.713T16 13zm0-4q-.425 0-.712-.288T3 8t.288-.712T4 7h12q.425 0 .713.288T17 8t-.288.713T16 9zm16 8q-.425 0-.712-.288T19 16t.288-.712T20 15t.713.288T21 16t-.288.713T20 17m0-4q-.425 0-.712-.288T19 12t.288-.712T20 11t.713.288T21 12t-.288.713T20 13m0-4q-.425 0-.712-.288T19 8t.288-.712T20 7t.713.288T21 8t-.288.713T20 9"/>
-                </Svg>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={toggleStyle}>
-                <Svg width="32" height="32" viewBox="0 0 24 24">
-                  <Path fillRule='evenodd' d="M13 21v-8h8v8zm2-6h4v4h-4zM3 11V3h8v8zm2-6h4v4H5z" clip-rule="evenodd"/><Path d="M18 6v6h-2V8h-4V6zm-6 12H6v-6h2v4h4z"/>
-                </Svg>
-              </TouchableOpacity>
+          <View style={[styles.modalContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            <View style={styles.modalGrid}>
+              <View style={styles.modalRow}>
+                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleToc}>
+                    <Svg width="32" height="32" viewBox="0 0 32 32">
+                      <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M26 2H8a2 2 0 0 0-2 2v4H4v2h2v5H4v2h2v5H4v2h2v4a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2m0 26H8v-4h2v-2H8v-5h2v-2H8v-5h2V8H8V4h18Z"/>
+                      <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M14 8h8v2h-8zm0 7h8v2h-8zm0 7h8v2h-8z" />
+                    </Svg>
+                    <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>目录</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleMode}>
+                    <Svg width="32" height="32" viewBox='0 0 24 24'>
+                      <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d={!isDarkMode ? 'M13.1 23h-2.6l.5-.312q.5-.313 1.088-.7t1.087-.7l.5-.313q2.025-.15 3.738-1.225t2.712-2.875q-2.15-.2-4.075-1.088t-3.45-2.412t-2.425-3.45T9.1 5.85Q7.175 6.925 6.088 8.813T5 12.9v.3l-.3.138q-.3.137-.663.287t-.662.288l-.3.137q-.05-.275-.062-.575T3 12.9q0-3.65 2.325-6.437T11.25 3q-.45 2.475.275 4.838t2.5 4.137t4.138 2.5T23 14.75q-.65 3.6-3.45 5.925T13.1 23M6 21h4.5q.625 0 1.063-.437T12 19.5t-.425-1.062T10.55 18h-1.3l-.5-1.2q-.35-.825-1.1-1.312T6 15q-1.25 0-2.125.863T3 18q0 1.25.875 2.125T6 21m0 2q-2.075 0-3.537-1.463T1 18t1.463-3.537T6 13q1.5 0 2.738.813T10.575 16Q12 16.05 13 17.063t1 2.437q0 1.45-1.025 2.475T10.5 23z' : 'M12 5q-.425 0-.712-.288T11 4V2q0-.425.288-.712T12 1t.713.288T13 2v2q0 .425-.288.713T12 5m4.95 2.05q-.275-.275-.275-.7t.275-.7l1.4-1.425q.3-.3.712-.3t.713.3q.275.275.275.7t-.275.7L18.35 7.05q-.275.275-.7.275t-.7-.275M20 13q-.425 0-.713-.288T19 12t.288-.712T20 11h2q.425 0 .713.288T23 12t-.288.713T22 13zm-1.65 6.775l-1.4-1.425q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l1.425 1.4q.3.3.3.712t-.3.713t-.712.3t-.713-.3M5.65 7.05L4.225 5.625q-.275-.275-.275-.7t.275-.7q.3-.3.713-.3t.712.3l1.4 1.425q.275.275.275.7t-.275.7t-.7.275t-.7-.275M6 19h4.5q.625 0 1.063-.437T12 17.5t-.425-1.062t-1.05-.438H9.25l-.5-1.2q-.35-.825-1.1-1.312T6 13q-1.25 0-2.125.875T3 16t.875 2.125T6 19m0 2q-2.075 0-3.537-1.463T1 16t1.463-3.537T6 11q1.5 0 2.738.813T10.575 14q1.45 0 2.438 1.075T14 17.65q-.05 1.425-1.062 2.388T10.5 21zm8-3.35q-.125-.5-.25-.975t-.25-.975q1.125-.475 1.813-1.475T16 12q0-1.65-1.175-2.825T12 8q-1.5 0-2.625.975T8.05 11.45q-.5-.125-1.025-.225T6 11q.35-2.2 2.063-3.6T12 6q2.5 0 4.25 1.75T18 12q0 1.925-1.1 3.463T14 17.65M12.025 12'}/>
+                    </Svg>
+                    <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>{isDarkMode ? '进入日间' : '进入夜间'}</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={() => {console.log('字体设置')}}>
+                    <Svg width={32} height={32} viewBox='0 0 24 24'>
+                      <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d='M15 4h7v2h-7zm1 4h6v2h-6zm2 4h4v2h-4zM9.307 4l-6 16h2.137l1.875-5h6.363l1.875 5h2.137l-6-16zm-1.239 9L10.5 6.515L12.932 13z'/>
+                    </Svg>
+                    <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>字体设置</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleStyle}>
+                    <Svg width="32" height="32" viewBox="0 0 24 24">
+                      <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M13.354 8.75H4a.75.75 0 0 1 0-1.5h9.354a2.751 2.751 0 0 1 5.293 0H20a.75.75 0 0 1 0 1.5h-1.354a2.751 2.751 0 0 1-5.292 0M14.75 8a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0m-4.103 8.75H20a.75.75 0 0 0 0-1.5h-9.353a2.751 2.751 0 0 0-5.293 0H4a.75.75 0 0 0 0 1.5h1.354a2.751 2.751 0 0 0 5.292 0M6.75 16a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0"/>
+                    </Svg>
+                    <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>更多样式</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.modalRow}>
+                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <TouchableOpacity
+                    style={[styles.colorButton, { backgroundColor: '#ffffff' }, {borderColor: readerStyle.backgroundColor === '#ffffff' ? '#f43f5e' : '#ffffff'}]}
+                    onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#ffffff', color: '#000000' })}
+                  />
+                  <TouchableOpacity
+                    style={[styles.colorButton, { backgroundColor: '#faebd7' }, {borderColor: readerStyle.backgroundColor === '#faebd7' ? '#f43f5e' : '#ffffff'}]}
+                    onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#faebd7', color: '#000000' })}
+                  />
+                  <TouchableOpacity
+                    style={[styles.colorButton, { backgroundColor: '#000000' }, {borderColor: readerStyle.backgroundColor === '#000000' ? '#f43f5e' : '#ffffff'}]}
+                    onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#000000', color: '#ffffff' })}
+                  />
+                </View>
+              </View>
             </View>
           </View>
         </Modal>
@@ -369,141 +412,33 @@ const ReaderScreen = () => {
           animationOutTiming={300}
           backdropOpacity={0}
         >
-          <View style={styles.styleContent}>
-            {/* 字体大小 */}
-            <View style={styles.sliderContainer}>
-              <View style={styles.sliderLabelContainer}>
-                <Text style={styles.sliderLabel}>字体大小</Text>
-                <Text style={styles.sliderValue}>{readerStyle.fontSize}</Text>
-                <View style={styles.controlButton}>
-                  <TouchableOpacity 
-                    onPress={() => decrementStyle('fontSize', 1, 12)} 
-                  >
-                    <Text style={styles.controlButtonText}>-</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => incrementStyle('fontSize', 1, 24)} 
-                  >
-                    <Text style={styles.controlButtonText}>+</Text>
-                  </TouchableOpacity>
+          <View style={[styles.styleContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            {moreStyles.map((style) => (
+              <View style={styles.styleContainer} key={style.key}>
+                <View style={[styles.styleLabelContainer, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <Text style={[styles.styleLabel, {color: isDarkMode ? '#e5e7eb' : '#525252'}]}>{style.text}</Text>
+                  <View style={[styles.controlContainer, {backgroundColor: isDarkMode ? 'black' : 'white'}]}>
+                    <TouchableOpacity 
+                      onPress={() => decrementStyle(style.key as keyof typeof readerStyle, style.step, style.min)} 
+                      style={styles.controlButton}
+                    >
+                      <Svg width="24" height="24" viewBox="0 0 24 24">
+                        <Path fill={isDarkMode ? colors.lightGrey : colors.darkGrey} d='M18 12.998H6a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2'/>
+                      </Svg>
+                    </TouchableOpacity>
+                    <Text style={[styles.styleValue, {color: isDarkMode ? 'white' : 'black'}]}>{readerStyle[style.key as keyof typeof readerStyle]}</Text>
+                    <TouchableOpacity 
+                      onPress={() => incrementStyle(style.key as keyof typeof readerStyle, style.step, style.max)} 
+                      style={styles.controlButton}
+                    >
+                      <Svg width="24" height="24" viewBox="0 0 24 24">
+                        <Path fill={isDarkMode ? colors.lightGrey : colors.darkGrey} d='M13 13v7a1 1 0 0 1-2 0v-7H4a1 1 0 0 1 0-2h7V4a1 1 0 0 1 2 0v7h7a1 1 0 0 1 0 2z'/>
+                      </Svg>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-              <View style={styles.sliderControl}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={12}
-                  maximumValue={24}
-                  step={1}
-                  value={readerStyle.fontSize}
-                  onValueChange={handleFontSizeChange}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#d3d3d3"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-            </View>
-
-            {/* 首行缩进 */}
-            <View style={styles.sliderContainer}>
-              <View style={styles.sliderLabelContainer}>
-                <Text style={styles.sliderLabel}>首行缩进</Text>
-                <Text style={styles.sliderValue}>{readerStyle.textIndent}em</Text>
-                <View style={styles.controlButton}>
-                  <TouchableOpacity 
-                    onPress={() => decrementStyle('textIndent', 1, 0)} 
-                  >
-                    <Text style={styles.controlButtonText}>-</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => incrementStyle('textIndent', 1, 30)} 
-                  >
-                    <Text style={styles.controlButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.sliderControl}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={30}
-                  step={1}
-                  value={readerStyle.textIndent}
-                  onValueChange={handleTextIndentChange}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#d3d3d3"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-            </View>
-
-            {/* 内边距 */}
-            <View style={styles.sliderContainer}>
-              <View style={styles.sliderLabelContainer}>
-                <Text style={styles.sliderLabel}>内边距</Text>
-                <Text style={styles.sliderValue}>{readerStyle.padding}px</Text>
-                <View style={styles.controlButton}>
-                  <TouchableOpacity 
-                    onPress={() => decrementStyle('padding', 1, 0)} 
-                  >
-                    <Text style={styles.controlButtonText}>-</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => incrementStyle('padding', 1, 20)} 
-                  >
-                    <Text style={styles.controlButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.sliderControl}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={20}
-                  step={1}
-                  value={readerStyle.padding}
-                  onValueChange={handlePaddingChange}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#d3d3d3"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-            </View>
-
-            {/* 行距 */}
-            <View style={styles.sliderContainer}>
-              <View style={styles.sliderLabelContainer}>
-                <Text style={styles.sliderLabel}>行距</Text>
-                <Text style={styles.sliderValue}>{readerStyle.lineHeight}em</Text>
-                <View style={styles.controlButton}>
-                  <TouchableOpacity 
-                    onPress={() => decrementStyle('lineHeight', 0.1, 1)} 
-                  >
-                    <Text style={styles.controlButtonText}>-</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => incrementStyle('lineHeight', 0.1, 3)} 
-                  >
-                    <Text style={styles.controlButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.sliderControl}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1}
-                  maximumValue={3}
-                  step={0.1}
-                  value={readerStyle.lineHeight}
-                  onValueChange={(value) => {
-                    const roundedValue = roundToStep(value, 0.1);
-                    handleLineHeightChange(roundedValue);
-                  }}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#d3d3d3"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-            </View>
+            ))}
           </View> 
         </Modal>
       </View>
@@ -535,91 +470,102 @@ const styles = StyleSheet.create({
   },
   modal:{
     justifyContent: 'flex-end',
-    margin: 0,
   },
   modalContent: {
-    backgroundColor: '#91d5ff',
+    backgroundColor: '#d4d4d4',
+    borderRadius: 15,
+  },
+  modalGrid: {
     padding: 12,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
     flexDirection: 'column',
-  },
-  colorOptions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
     gap: 10,
-    paddingBottom: 10,
-    paddingLeft: 3,
-    paddingRight: 3,
-    borderBottomWidth: 0.5,
-    borderColor: 'white',
   },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  colorButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#000',
-  },
-  menuRow: {
+  modalRow: {
     flexDirection: 'row',
-    paddingTop: 10,
-    paddingLeft: 10,
-    paddingRight: 10,
-    gap: 20,
+    justifyContent: 'space-between',
+    gap: 10,
   },
-  iconButton: {
-    alignItems: 'center',
+  modalCol: {
+    padding: 8,
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    gap: 10,
   },
-  styleModal: {
+  modalItem: {
+    flex: 1,
+    paddingTop: 6,
+    paddingBottom: 3,
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 35,
-    marginRight: 35,
+    alignContent: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  colorButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 25,
+    borderWidth: 1,
+  },
+  styleModal: {
+    height: 'auto',
+    alignSelf: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
   },
   styleContent: {
     flexDirection: 'column',
-    backgroundColor: 'white',
+    backgroundColor: '#d4d4d4',
     padding: 12,
     borderRadius: 15,
+    gap: 10,
+    boxShadow: '0 0 6px rgba(0, 0, 0, 0.5)',
   },
-  sliderContainer: {
+  styleContainer: {
     flexDirection: 'column',
   },
-  sliderLabelContainer: {
-    flexDirection: 'row',
+  styleLabelContainer: {
+    flexDirection: 'column',
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#f5f5f5',
+    padding: 6,
+    paddingTop: 3,
+    gap: 3,
+  },
+  styleLabel: {
+    fontSize: 14,
+  },
+  controlContainer: {
+    width: 150,
+    paddingTop: 4,
+    paddingBottom: 4,
+    paddingLeft: 8,
+    paddingRight: 8,
+    flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  sliderLabel: {
-    fontSize: 16,
-    width: 64,
-  },
-  sliderValue: {
-    fontSize: 16,
-  },
-  sliderControl: {
-    flexDirection: 'row',
     alignItems: 'center',
+    gap: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  styleValue: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 22,
   },
   controlButton: {
-    flexDirection: 'row',
-    gap: 20,
+    width: 30,
+    height: 26,
+    alignItems: 'center',
   },
-  controlButtonText: {
-    fontSize: 18,
-    color: '#1EB1FC',
-  },
-  slider: {
-    width: '100%',
-    height: 30,
-  },
-
 });
 
 export default ReaderScreen;

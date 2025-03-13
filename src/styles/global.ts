@@ -1,5 +1,3 @@
-import { StyleSheet } from "react-native";
-
 // 颜色
 export const colors = {
     // 状态栏、导航栏背景色
@@ -12,6 +10,8 @@ export const colors = {
     black: '#000',
     // 淡灰色
     lightGrey: '#e5e7eb',
+    // 深灰色
+    darkGrey: '#737373',
     // 灰色
     grey: '#9ca3af',
     // 淡黄色
