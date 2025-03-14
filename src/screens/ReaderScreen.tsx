@@ -1,19 +1,23 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { StatusBar ,View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text } from 'react-native';
-import { useRoute } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
 import { Reader, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { saveFile, webdavGet, webdavUpload } from '../utils/fileUtils';
 import { Buffer } from 'buffer';
-import { useNavigation } from '@react-navigation/native';
 import { getKeyCode, setKeyCode} from '../utils/VolumeModule';
 import Modal from 'react-native-modal';
 import LoadingAnimation from '../component/LoadingAnimation';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../styles/global';
+import { ReaderScreenNavigationProp, ReaderScreenRouteProp } from '../route/navigation-types';
 
-const ReaderScreen = () => {
+type ReaderScreenProps = {
+  navigation: ReaderScreenNavigationProp;
+  route: ReaderScreenRouteProp;
+};
+
+const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   // 菜单弹窗是否显示
   const [isModalVisible, setIsModalVisible] = useState(false);
   const toggleModal = () => setIsModalVisible(!isModalVisible);
@@ -58,8 +62,6 @@ const ReaderScreen = () => {
   type RouteParams = {
     bookId: string;
   };
-  const navigation = useNavigation();
-  const route = useRoute<{ key: string; name: string; params: RouteParams }>();
   const { bookId } = route.params;
   const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize } = useReader();
   // 保存书籍加载时的阅读进度
@@ -117,7 +119,7 @@ const ReaderScreen = () => {
     saveReaderLocation().then(() => {
       if(route.name === 'Reader') {
         // 返回HomeScreen
-        navigation.goBack();
+        navigation.navigate('Home');
       }
     });
     return true;

@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         boxShadow: '0 0 6px rgba(0, 0, 0, 0.1)',
+        backgroundColor: '#fff',
     },
     tab: {
         display: 'flex',

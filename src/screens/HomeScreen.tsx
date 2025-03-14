@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { StatusBar ,View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Animated, TouchableWithoutFeedback, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import DocumentPicker from 'react-native-document-picker';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { saveFile, loadBooks, deleteBook, webdavSyncFiles, webdavUpload, webdavUploadFile } from '../utils/fileUtils';
 import RNFS, { readFile } from 'react-native-fs';
 import { unzip } from 'react-native-zip-archive';
@@ -12,13 +10,12 @@ import LoadingAnimation, {AnimationType} from '../component/LoadingAnimation';
 import {colors} from '../styles/global';
 import FooterTab from '../component/FooterTab';
 import Modal from 'react-native-modal';
+import { HomeScreenNavigationProp } from '../route/navigation-types';
 
-type RootStackParamList = {
-  Home: undefined;
-  Reader: { bookId: string };
-};
-
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+// 定义组件属性类型
+type HomeScreenProps = {
+  navigation: HomeScreenNavigationProp;
+}
 
 interface Book {
   id: string;
@@ -33,8 +30,7 @@ interface Book {
   location: string;
 }
 
-const HomeScreen = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingType, setLoadingType] = useState<AnimationType>('roxy');
@@ -243,6 +239,12 @@ const HomeScreen = () => {
     navigation.navigate('Reader', { bookId });
   };
 
+  const openSetting = (key: string) => {
+    if (key === 'setting') {
+      navigation.navigate('Setting');
+    }
+  }
+
   const handleBookAction = (bookId: string, action: string) => {
     switch (action) {
       case 'open':
@@ -315,7 +317,7 @@ const HomeScreen = () => {
           />
           <FooterTab
             activeTab='home'
-            onTabPress={(key) => console.log(key)}
+            onTabPress={(key) => openSetting(key)}
           />
           <Modal
             isVisible={isBottomSheetVisible}
@@ -375,6 +377,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -383,9 +386,11 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     padding: 10,
     backgroundColor: colors.header,
+    borderBottomColor: colors.lightGrey,
+    borderBottomWidth: 0.5,
   },
   headerText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '600',
     flex: 1,
     marginLeft: 5,

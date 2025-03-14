@@ -1,7 +1,7 @@
 // 颜色
 export const colors = {
     // 状态栏、导航栏背景色
-    header: '#f6f7d7',
+    header: '#fff',
     // 图标边框颜色
     iconStroke: '#888',
     // 图标激活填充色
@@ -14,6 +14,14 @@ export const colors = {
     darkGrey: '#737373',
     // 灰色
     grey: '#9ca3af',
+    // 浅中色
+    lightNeutral: '#e5e5e5',
+    // 浅石灰色
+    lightStone: '#f5f5f4',
+    // 浅石板色
+    lightSlate: '#f1f5f9',
+    // 浅天蓝色
+    lightSky: '#f0f9ff',
     // 淡黄色
     lightYellow: '#fde047',
     // 淡青色
