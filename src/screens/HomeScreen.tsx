@@ -287,8 +287,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
           <View style={styles.header}>
             <Text style={styles.headerText}>书架</Text>
             <TouchableOpacity onPress={addBook} style={styles.iconButton}>
-              <Svg width="32" height="32" viewBox="0 0 24 24">
-                <Path d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v6.7q-.475-.225-.975-.387T19 11.075V5H5v14h6.05q.075.55.238 1.05t.387.95zm0-3v1V5v6.075V11zm2-1h4.075q.075-.525.238-1.025t.362-.975H7zm0-4h6.1q.8-.75 1.788-1.25T17 11.075V11H7zm0-4h10V7H7zm11 14q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m-.5-2h1v-2.5H21v-1h-2.5V15h-1v2.5H15v1h2.5z"/>
+              <Svg width="32" height="32" viewBox="0 0 512 512">
+                <Path d="m426.667 320l-.001 63.999h64.001v42.667h-64.001l.001 64H384v-64h-64V384l64-.001v-64zm-128 64v42.666h-256V384zM320 106.666v256h-64v-256zM149.334 85.333v277.333h-64V85.333zm85.333 21.333v256h-64v-256zm159.028.585l36.494 191.415h-68.286l-31.236-180.302z"/>
               </Svg>
             </TouchableOpacity>
             <TouchableOpacity onPress={syncFiles} style={styles.iconButton}>
@@ -328,7 +328,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
             deviceHeight={Dimensions.get('screen').height}
             useNativeDriver={true}
             hideModalContentWhileAnimating={true}
-            backdropTransitionOutTiming={0}
+            backdropTransitionOutTiming={1}
             animationIn={'slideInUp'}
             animationOut={'slideOutDown'}
             style={{justifyContent: 'flex-end'}}

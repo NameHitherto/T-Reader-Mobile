@@ -6,11 +6,24 @@ const WEBDAV_URL = 'https://dav.jianguoyun.com/dav/T-Reader/';
 const WEBDAV_USER = '605351778@qq.com';
 const WEBDAV_PASS = 'ayntpghyezyf7pna';
 
+// setting.json
+export interface Setting {
+  WEBDAV_BASE_URL?: string;
+  WEBDAV_FOLDER?: string;
+  WEBDAV_USER?: string;
+  WEBDAV_PASS?: string;
+  MODEL_NAME?: string;
+  MODEL_BASE_URL?: string;
+  MODEL_API_KEY?: string;
+}
+
+// 保存文件
 export const saveFile = async (filename: string, contents: string, directory?: string) => {
   const path = directory ? `${directory}/T-Reader/${filename}` : `${RNFS.DocumentDirectoryPath}/T-Reader/${filename}`;
   await RNFS.writeFile(path, contents, 'utf8');
 };
 
+// 读取书籍信息
 export const loadBooks = async (directory?: string) => {
   const booksDir = directory ? `${directory}/T-Reader` : `${RNFS.DocumentDirectoryPath}/T-Reader`;
   if (!(await RNFS.exists(booksDir))) {
@@ -31,6 +44,7 @@ export const loadBooks = async (directory?: string) => {
   return loadedBooks.filter(book => book !== null);
 };
 
+// 删除书籍
 export const deleteBook = async (filename: string, directory?: string) => {
   const path = directory ? `${directory}/T-Reader/${filename}` : `${RNFS.DocumentDirectoryPath}/T-Reader/${filename}`;
   await RNFS.unlink(`${path}.epub`);
@@ -42,6 +56,22 @@ export const deleteBook = async (filename: string, directory?: string) => {
 export const readFileByPath = async (filepath: string) => {
   const contents = await RNFS.readFile(filepath, 'base64');
   return contents;
+};
+
+// 读取系统配置文件
+export const readSetting = async ():Promise<Setting> => {
+  const settingPath = `${RNFS.DocumentDirectoryPath}/T-Reader/setting.json`;
+  if (!(await RNFS.exists(settingPath))) {
+    return {};
+  }
+  const content = await RNFS.readFile(settingPath);
+  return JSON.parse(content);
+};
+
+// 保存系统配置文件
+export const saveSetting = async (setting: Setting) => {
+  const settingPath = `${RNFS.DocumentDirectoryPath}/T-Reader/setting.json`;
+  await RNFS.writeFile(settingPath, JSON.stringify(setting), 'utf8');
 };
 
 // 禁止上传ePub文件，只允许上传JSON文件

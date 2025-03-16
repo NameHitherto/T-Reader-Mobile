@@ -58,10 +58,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
       saveReaderStyle();
     };
   }, [readerStyle]);
-
-  type RouteParams = {
-    bookId: string;
-  };
+  
   const { bookId } = route.params;
   const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize } = useReader();
   // 保存书籍加载时的阅读进度
@@ -249,23 +246,6 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
 
   const nextPage = () => {
     goNext();
-  };
-
-  // 调整样式
-  const handleFontSizeChange = (value: number) => {
-    setReaderStyle(prev => ({ ...prev, fontSize: value }));
-  };
-
-  const handleTextIndentChange = (value: number) => {
-    setReaderStyle(prev => ({ ...prev, textIndent: value }));
-  };
-
-  const handlePaddingChange = (value: number) => {
-    setReaderStyle(prev => ({ ...prev, padding: value }));
-  };
-
-  const handleLineHeightChange = (value: number) => {
-    setReaderStyle(prev => ({ ...prev, lineHeight: value }));
   };
 
   // 精度修正函数
