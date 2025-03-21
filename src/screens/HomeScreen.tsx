@@ -35,7 +35,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingType, setLoadingType] = useState<AnimationType>('roxy');
   const [loadingMessage, setLoadingMessage] = useState<string>('');
-  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState<boolean>(false);
+  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+  const toggleBottomSheet = () => setIsBottomSheetVisible(!isBottomSheetVisible);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const selectedBook = useMemo(() => {
     return books.find(book => book.id === selectedBookId);
@@ -47,6 +48,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   ]
 
   useEffect(() => {
+    // 加载书籍
     loadBooksFromFileSystem();
   }, []);
 
@@ -261,12 +263,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   };
 
   const handleLongPress = (bookId: string) => {
-    setIsBottomSheetVisible(true);
     setSelectedBookId(bookId);
+    if (selectedBook) {
+      toggleBottomSheet();
+    }
   };
 
   const handleCasualPress = () => {
-    
+
   };
 
   // 删除书籍
@@ -277,7 +281,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
   return (
     <>
-      <StatusBar 
+      <StatusBar
         backgroundColor={colors.header}
         barStyle='dark-content'
       />
@@ -321,22 +325,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
           />
           <Modal
             isVisible={isBottomSheetVisible}
-            onBackButtonPress={() => setIsBottomSheetVisible(false)}
-            onBackdropPress={() => setIsBottomSheetVisible(false)}
+            onBackButtonPress={toggleBottomSheet}
+            onBackdropPress={toggleBottomSheet}
             backdropOpacity={0.3}
             statusBarTranslucent={true}
             deviceHeight={Dimensions.get('screen').height}
+            animationIn={'fadeInUp'}
+            animationOut={'fadeOutDown'}
+            animationInTiming={300}
+            animationOutTiming={100}
             useNativeDriver={true}
-            hideModalContentWhileAnimating={true}
             backdropTransitionOutTiming={1}
-            animationIn={'slideInUp'}
-            animationOut={'slideOutDown'}
+            hideModalContentWhileAnimating={false}
             style={{justifyContent: 'flex-end'}}
           >
             <View style={styles.bottomSheetView}>
               <View style={styles.bottomSheetBook}>
                 <View style={styles.bottomSheetBookInfo}>
-                  <Image defaultSource={require('../assets/default_cover.png')} source={{ uri: selectedBook?.cover }} style={styles.bookOptionCover}/>
+                  <Image 
+                    defaultSource={require('../assets/default_cover.png')} 
+                    source={{ uri: selectedBook?.cover }} 
+                    style={styles.bookOptionCover}
+                  />
                   <View style={styles.bottomSheetBookDetail}>
                     <Text>{selectedBook?.title}</Text>
                     <Text style={{fontSize: 12, color: colors.grey}}>{selectedBook?.author}</Text>
