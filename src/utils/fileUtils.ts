@@ -2,10 +2,6 @@ import RNFS from 'react-native-fs';
 import { DOMParser } from 'xmldom';
 import { Buffer } from 'buffer';
 
-const WEBDAV_URL = 'https://dav.jianguoyun.com/dav/T-Reader/';
-const WEBDAV_USER = '605351778@qq.com';
-const WEBDAV_PASS = 'ayntpghyezyf7pna';
-
 // setting.json
 export interface Setting {
   WEBDAV_BASE_URL?: string;
@@ -16,6 +12,30 @@ export interface Setting {
   MODEL_BASE_URL?: string;
   MODEL_API_KEY?: string;
 }
+
+/**
+ * 读取配置文件并处理
+ */
+const getDirectSetting = async () => {
+  const setting = await readSetting();
+  // 云同步URL
+  let webdavUrl = setting.WEBDAV_BASE_URL;
+  if (setting.WEBDAV_FOLDER?.endsWith('/')) {
+    webdavUrl += setting.WEBDAV_FOLDER;
+  } else {
+    webdavUrl += `${setting.WEBDAV_FOLDER}/`;
+  }
+  // 其余直接引用
+  const directSetting = {
+    WEBDAV_URL: webdavUrl,
+    WEBDAV_USER: setting.WEBDAV_USER,
+    WEBDAV_PASS: setting.WEBDAV_PASS,
+    MODEL_NAME: setting.MODEL_NAME,
+    MODEL_BASE_URL: setting.MODEL_BASE_URL,
+    MODEL_API_KEY: setting.MODEL_API_KEY
+  };
+  return directSetting;
+};
 
 // 保存文件
 export const saveFile = async (filename: string, contents: string, directory?: string) => {
@@ -76,6 +96,7 @@ export const saveSetting = async (setting: Setting) => {
 
 // 禁止上传ePub文件，只允许上传JSON文件
 export const webdavUpload = async (filename: string, contents: string) => {
+  const { WEBDAV_URL, WEBDAV_USER, WEBDAV_PASS } = await getDirectSetting();
   const response = await fetch(`${WEBDAV_URL}${filename}`, {
     method: 'PUT',
     headers: {
@@ -93,6 +114,7 @@ export const webdavUpload = async (filename: string, contents: string) => {
 
 // 上传EPub文件有效
 export const webdavUploadFile = async (filename: string, contents: string) => {
+  const { WEBDAV_URL, WEBDAV_USER, WEBDAV_PASS } = await getDirectSetting();
   const response = await fetch(`${WEBDAV_URL}${filename}`, {
     method: 'PUT',
     headers: {
@@ -109,6 +131,7 @@ export const webdavUploadFile = async (filename: string, contents: string) => {
 };
 
 export const webdavGet = async (filename: string) => {
+  const { WEBDAV_URL, WEBDAV_USER, WEBDAV_PASS } = await getDirectSetting();
   const response = await fetch(`${WEBDAV_URL}${filename}`, {
     method: 'GET',
     headers: {
@@ -125,6 +148,7 @@ export const webdavGet = async (filename: string) => {
 };
 
 export const webdavDelete = async (filename: string) => {
+  const { WEBDAV_URL, WEBDAV_USER, WEBDAV_PASS } = await getDirectSetting();
   const response = await fetch(`${WEBDAV_URL}${filename}`, {
     method: 'DELETE',
     headers: {
@@ -139,6 +163,8 @@ export const webdavDelete = async (filename: string) => {
 };
 
 export const webdavSyncFiles = async (directory?: string) => {
+  const { WEBDAV_URL, WEBDAV_USER, WEBDAV_PASS } = await getDirectSetting();
+  if (!WEBDAV_URL) return;
   const response = await fetch(WEBDAV_URL, {
     method: 'PROPFIND',
     headers: {
