@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from "react";
+import React, {useState, useEffect} from "react";
 import { ScrollView, StatusBar, StyleSheet, View,Text, TextInput } from "react-native";
 import FooterTab from "../component/FooterTab";
 import { SettingScreenNavigationProp } from "../route/navigation-types";

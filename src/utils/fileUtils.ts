@@ -48,9 +48,7 @@ export const loadBooks = async (directory?: string) => {
   const booksDir = directory ? `${directory}/T-Reader` : `${RNFS.DocumentDirectoryPath}/T-Reader`;
   if (!(await RNFS.exists(booksDir))) {
     await RNFS.mkdir(booksDir);
-  } else {
-    console.log("目录 'T-Reader' 已存在。");
-  }
+  } 
   const files = await RNFS.readDir(booksDir);
   const bookFiles = files.filter(file => file.name.endsWith('.json'));
   const loadedBooks = await Promise.all(bookFiles.map(async file => {
@@ -187,8 +185,15 @@ export const webdavSyncFiles = async (directory?: string) => {
     await RNFS.mkdir(booksDir);
   } else {
     // 清理目录旧文件
-    RNFS.unlink(booksDir);
-    RNFS.mkdir(booksDir);
+    // 找到并删除所有后缀为epub的文件和与其同名的json文件
+    const files = await RNFS.readDir(booksDir);
+    await Promise.all(files.map(async file => {
+      if (file.name.endsWith('.epub')) {
+        await RNFS.unlink(file.path);
+        // 删除同名json文件
+        await RNFS.unlink(file.path.slice(0, -5) + '.json');
+      }
+    }));
   }
 
   await Promise.all(files.map(async file => {

@@ -55,53 +55,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const loadBooksFromFileSystem = async () => {
     try {
       const loadedBooks = await loadBooks();
-      for (const book of loadedBooks) {
-        try {
-          const epubPath = `${RNFS.DocumentDirectoryPath}/T-Reader/${book.id}.epub`;
-          const unzipPath = `${RNFS.DocumentDirectoryPath}/T-Reader/${book.id}`;
-          await unzip(epubPath, unzipPath);
-  
-          const containerXmlPath = `${unzipPath}/META-INF/container.xml`;
-          const containerXml = await RNFS.readFile(containerXmlPath);
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(containerXml, 'text/xml');
-          const rootfilePath = xmlDoc.getElementsByTagName('rootfile')[0].getAttribute('full-path');
-          const contentOpfPath = `${unzipPath}/${rootfilePath}`;
-          const contentOpf = await RNFS.readFile(contentOpfPath);
-          const contentDoc = parser.parseFromString(contentOpf, 'text/xml');
-          const metadata = contentDoc.getElementsByTagName('metadata')[0];
-          const manifest = contentDoc.getElementsByTagName('manifest')[0];
-          const coverId = Array.from(metadata.getElementsByTagName('meta')).find(meta => meta.getAttribute('name') === 'cover')?.getAttribute('content');
-          const coverItem = Array.from(manifest.getElementsByTagName('item')).find(item => item.getAttribute('id') === coverId);
-          let coverPath = coverItem ? `${unzipPath}/OEBPS/${coverItem.getAttribute('href')}` : null;
-
-          // 若coverPath为null，则寻找名为cover的图片位置
-          if(!coverPath){
-            const imgPath = `${unzipPath}/OEBPS/Images/cover`;
-            if(await RNFS.exists(`${imgPath}.jpg`)){
-              coverPath = `${imgPath}.jpg`;
-            }else if(await RNFS.exists(`${imgPath}.jpeg`)){
-              coverPath = `${imgPath}.jpeg`;
-            };
-          }
-
-          if (coverPath && await RNFS.exists(coverPath)) {
-            // 读取封面图片数据并转换为 Base64 编码的 URI
-            const coverData = await RNFS.readFile(coverPath, 'base64');
-            const coverUri = `data:image/jpeg;base64,${coverData}`;
-            book.cover = coverUri;
-          } else {
-            console.log(`封面文件不存在: ${coverPath}`);
-            book.cover = 'unknown';
-          }
-
-          // 删除解压后的目录
-          await RNFS.unlink(unzipPath);
-        } catch (error) {
-          console.log('Error loading cover for book:', book.title, error);
-        }
-      }
-  
       setBooks(loadedBooks);
     } catch (error) {
       console.error('Error loading books:', error);
@@ -203,7 +156,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
       const newBook: Book = {
         id: newBookId,
-        cover: coverPath ? coverPath : 'unknown',
+        cover: coverPath ? coverUri : 'unknown',
         title: metadata.getElementsByTagName('dc:title')[0]?.textContent ?? '未知书名',
         path: selectedFilePath,
         added: new Date().toLocaleDateString(),
