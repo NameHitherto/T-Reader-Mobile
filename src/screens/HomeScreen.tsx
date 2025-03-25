@@ -11,23 +11,11 @@ import {colors} from '../styles/global';
 import FooterTab from '../component/FooterTab';
 import Modal from 'react-native-modal';
 import { HomeScreenNavigationProp } from '../route/navigation-types';
+import { Book } from '../constant/type.map';
 
 // 定义组件属性类型
 type HomeScreenProps = {
   navigation: HomeScreenNavigationProp;
-}
-
-interface Book {
-  id: string;
-  title: string;
-  cover: string;
-  path: string;
-  added: string;
-  author: string;
-  lastRead: string;
-  size: string;
-  language: string;
-  location: string;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {

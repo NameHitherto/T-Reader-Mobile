@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { StatusBar ,View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text } from 'react-native';
+import { StatusBar ,View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text, TextInput, FlatList } from 'react-native';
 import RNFS from 'react-native-fs';
 import { Reader, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
-import { saveFile, webdavGet, webdavUpload } from '../utils/fileUtils';
+import { saveFile, webdavGet, webdavUpload, askQuestion, getEpubContent } from '../utils/fileUtils';
 import { Buffer } from 'buffer';
 import { getKeyCode, setKeyCode} from '../utils/VolumeModule';
 import Modal from 'react-native-modal';
 import LoadingAnimation from '../component/LoadingAnimation';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, G } from 'react-native-svg';
 import { colors } from '../styles/global';
 import { ReaderScreenNavigationProp, ReaderScreenRouteProp } from '../route/navigation-types';
+import { ModelMessage } from '../constant/type.map';
 
 type ReaderScreenProps = {
   navigation: ReaderScreenNavigationProp;
@@ -35,6 +36,22 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
       setIsModalVisible(false);
     }
   };
+
+  // AI助手抽屉状态
+  const [isAssistantVisible, setIsAssistantVisible] = useState(false);
+  const toggleAssistant = () => {
+    setIsAssistantVisible(!isAssistantVisible);
+    // 若菜单弹窗显示，则关闭菜单弹窗
+    if(isModalVisible) {
+      setIsModalVisible(false);
+    }
+  };
+  // 对话历史记录
+  const [chatHistory, setChatHistory] = useState<ModelMessage[]>([]);
+  // 问题
+  const [questionInput, onChangeQuestionInput] = useState<string>('');
+  // 书籍正文内容
+  const [bookContent, setBookContent] = useState<string>('');
 
   // 阅读器样式设置
   const [readerStyle, setReaderStyle] = useState({
@@ -279,6 +296,47 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     }));
   };
 
+  // 重置对话
+  const resetChat = () => {
+    setChatHistory([]);
+    onChangeQuestionInput('');
+  };
+
+  // 发送问题/请求大模型API
+  const sendQuestion = async() => {
+    if(questionInput.trim() === '') {
+      return;
+    }
+    const QUESTION: ModelMessage = { role: 'user', content: questionInput };
+    onChangeQuestionInput('');
+    chatHistory.push(QUESTION);
+    try {
+      // 获取书籍章节正文, 限制10000字
+      if (bookContent === '') {
+        const bookContent = await getEpubContent(`${RNFS.DocumentDirectoryPath}/T-Reader/${bookId}.epub`, 10000);
+        setBookContent(bookContent);
+      }
+      // 添加空回复，用于显示loading
+      const LOADING: ModelMessage = {role: 'assistant', content: ''};
+      chatHistory.push(LOADING);
+      // 由于RN内核限制，目前只支持非流式输出
+      await askQuestion({
+        messages: chatHistory,
+        stream: false,
+        bookInfo: bookContent,
+        onComplete: (answer) => {
+          const ANSWER: ModelMessage = {role: 'assistant', content: answer};
+          chatHistory.pop();
+          chatHistory.push(ANSWER);
+          // 强制刷新
+          setChatHistory([...chatHistory]);
+        }
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   return (
     <>
       <StatusBar 
@@ -365,6 +423,17 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
               </View>
               <View style={styles.modalRow}>
                 <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleAssistant}>
+                    <Svg width="32" height="32" viewBox="0 0 24 24">
+                      <G fill={'none'} strokeWidth={1.5} stroke={isDarkMode ? 'white' : 'black'} >
+                        <Path d="M14.17 20.89c4.184-.277 7.516-3.657 7.79-7.9c.053-.83.053-1.69 0-2.52c-.274-4.242-3.606-7.62-7.79-7.899a33 33 0 0 0-4.34 0c-4.184.278-7.516 3.657-7.79 7.9a20 20 0 0 0 0 2.52c.1 1.545.783 2.976 1.588 4.184c.467.845.159 1.9-.328 2.823c-.35.665-.526.997-.385 1.237c.14.24.455.248 1.084.263c1.245.03 2.084-.322 2.75-.813c.377-.279.566-.418.696-.434s.387.09.899.3c.46.19.995.307 1.485.34c1.425.094 2.914.094 4.342 0"/>
+                        <Path d='m7.5 15l1.842-5.526a.694.694 0 0 1 1.316 0L12.5 15m3-6v6m-7-2h3'/>
+                      </G>
+                    </Svg>
+                    <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>问答助手</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
                   <TouchableOpacity
                     style={[styles.colorButton, { backgroundColor: '#ffffff' }, {borderColor: readerStyle.backgroundColor === '#ffffff' ? '#f43f5e' : '#ffffff'}]}
                     onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#ffffff', color: '#000000' })}
@@ -422,6 +491,74 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
               </View>
             ))}
           </View> 
+        </Modal>
+        {/* 问答助手抽屉 */}
+        <Modal
+          isVisible={isAssistantVisible}
+          onBackdropPress={toggleAssistant}
+          onBackButtonPress={toggleAssistant}
+          style={styles.assistantModal}
+          backdropOpacity={0}
+          backdropTransitionOutTiming={1}
+          animationIn={'fadeInUp'}
+          animationOut={'fadeOutDown'}
+          animationInTiming={300}
+          animationOutTiming={100}
+        >
+          <View style={[styles.assistantContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            <View style={styles.chatBodyWrapper}>
+              <FlatList
+                style={styles.chatList}
+                data={chatHistory}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                  <View style={[styles.chatContent, item.role === 'user' ? styles.chatUser : styles.chatAssistant]}>
+                    <View style={[styles.chatBubble, item.role === 'user' ? styles.chatBubbleUser : styles.chatBubbleAssistant, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                      <Text style={{color: isDarkMode ? '#fff' : '#000', opacity: item.content === '' ? 0.3 : 1}}>
+                        {item.content === '' ? '正在思考中...' : item.content}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                ListEmptyComponent={
+                  <View style={styles.chatWelcome}>
+                    <Text style={{fontSize: 20, fontWeight: 'bold', color: isDarkMode ? '#fff' : '#000'}}>嗨！我是你的问答助手</Text>
+                    <Text style={{color: isDarkMode ? colors.lightGrey : colors.darkGrey}}>我可以帮你回答有关此书的疑惑~</Text>
+                  </View>
+                }
+                contentContainerStyle={styles.chatContainer}
+              />
+            </View>
+            <View style={styles.chatFooter}>
+              <TextInput 
+                onChangeText={onChangeQuestionInput} 
+                value={questionInput}
+                style={[styles.chatInput, {backgroundColor: isDarkMode ? '#737373' : '#fff', color: isDarkMode ? '#fff' : '#000'}]}
+              />
+              <View style={styles.chatOptions}>
+                <View>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    style={[styles.chatInfoButton, {backgroundColor: '#e5e7eb'}]}
+                  >
+                    <Text style={[styles.chatInfoText, {color: '#9ca3af'}]}>流式输出</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.chatOptionsEnd}>
+                  <TouchableOpacity onPress={resetChat} style={[styles.chatButton, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                    <Svg width={24} height={24} viewBox='0 0 24 24'>
+                      <Path stroke={isDarkMode ? '#fff' : '#000'} strokeWidth={2} d='M18 12h-6m0 0H6m6 0V6m0 6v6'></Path>
+                    </Svg>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={sendQuestion} style={[styles.chatButton, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                    <Svg width={24} height={24} viewBox='0 0 24 24'>
+                      <Path stroke={isDarkMode ? '#fff' : '#000'} strokeWidth={2} d='M12 5v14m6-8l-6-6m-6 6l6-6'></Path>
+                    </Svg>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
         </Modal>
       </View>
     </>
@@ -492,6 +629,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 25,
     borderWidth: 1,
+    alignSelf: 'center',
   },
   styleModal: {
     height: 'auto',
@@ -548,6 +686,92 @@ const styles = StyleSheet.create({
     height: 26,
     alignItems: 'center',
   },
+  assistantModal: {
+    justifyContent: 'flex-end',
+  },
+  assistantContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: 15,
+    boxShadow: '0 0 6px rgba(0, 0, 0, 0.25)',
+  },
+  chatBodyWrapper: {
+    flexDirection: 'column',
+    maxHeight: Dimensions.get('window').height * 0.6,
+    marginVertical: 6,
+  },
+  chatList: {
+    flex: 0,
+  },
+  chatContainer: {
+    padding: 12,
+    flexDirection: 'column',
+    flexGrow: 1,
+    gap: 6,
+  },
+  chatWelcome: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chatContent: {
+    width: '100%',
+    flexDirection: 'row',
+  },
+  chatUser: {
+    justifyContent: 'flex-end',
+  },
+  chatAssistant: {
+    justifyContent: 'flex-start',
+  },
+  chatBubble: {
+    padding: 8,
+    borderRadius: 10,
+  },
+  chatBubbleUser: {
+    backgroundColor: '#f5f5f5',
+  },
+  chatBubbleAssistant: {
+    backgroundColor: '#f5f5f5',
+  },
+  chatFooter: {
+    flexDirection: 'column',
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    gap: 5,
+  },
+  chatInput: {
+    minHeight: 40,
+    borderRadius: 10,
+    padding: 6,
+  },
+  chatOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  chatOptionsEnd: {
+    gap: 10,
+    flexDirection: 'row',
+  },
+  chatButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#000',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chatInfoButton: {
+    height: 28,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chatInfoText: {
+    fontSize: 12,
+  }
 });
 
 export default ReaderScreen;

@@ -17,7 +17,7 @@ const cloudSyncPlatform = [
 ]
 // 大模型
 const bigModel = [
-    { label: 'DeepSeek-V3', model: 'deepseek-v3', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions' }
+    { label: 'DeepSeek-V3', model: 'deepseek-v3', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' }
 ]
 
 const SettingScreen: React.FC<SettingScreenProps> = ({navigation}) => {
