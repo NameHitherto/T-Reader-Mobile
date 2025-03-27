@@ -25,7 +25,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
 
   // 目录抽屉状态
   const [isTocVisible, setIsTocVisible] = useState(false);
-  const toggleToc = () => setIsTocVisible(!isTocVisible);
+  const toggleToc = () => {
+    setIsTocVisible(!isTocVisible);
+    // 若菜单弹窗显示，则关闭菜单弹窗
+    if(isModalVisible) {
+      setIsModalVisible(false);
+    }
+  };
 
   // 样式抽屉状态
   const [isStyleVisible, setIsStyleVisible] = useState(false);
@@ -77,7 +83,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   }, [readerStyle]);
   
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize } = useReader();
+  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize, toc, getMeta } = useReader();
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
@@ -287,6 +293,11 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     });
   };
 
+  // 删除目录标签中多余的空格和换行符
+  const cleanTocLabel = (label: string): string => {
+    return label.replace(/\s+/g, ' ').trim();
+  }
+
   // 切换日间/夜间模式
   const toggleMode = () => {
     setReaderStyle(prev => ({
@@ -392,6 +403,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
             <View style={styles.modalGrid}>
               <View style={styles.modalRow}>
                 <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  {/* 打开目录 */}
                   <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleToc}>
                     <Svg width="32" height="32" viewBox="0 0 32 32">
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M26 2H8a2 2 0 0 0-2 2v4H4v2h2v5H4v2h2v5H4v2h2v4a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2m0 26H8v-4h2v-2H8v-5h2v-2H8v-5h2V8H8V4h18Z"/>
@@ -399,6 +411,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                     </Svg>
                     <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>目录</Text>
                   </TouchableOpacity>
+                  {/* 日夜切换 */}
                   <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleMode}>
                     <Svg width="32" height="32" viewBox='0 0 24 24'>
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d={!isDarkMode ? 'M13.1 23h-2.6l.5-.312q.5-.313 1.088-.7t1.087-.7l.5-.313q2.025-.15 3.738-1.225t2.712-2.875q-2.15-.2-4.075-1.088t-3.45-2.412t-2.425-3.45T9.1 5.85Q7.175 6.925 6.088 8.813T5 12.9v.3l-.3.138q-.3.137-.663.287t-.662.288l-.3.137q-.05-.275-.062-.575T3 12.9q0-3.65 2.325-6.437T11.25 3q-.45 2.475.275 4.838t2.5 4.137t4.138 2.5T23 14.75q-.65 3.6-3.45 5.925T13.1 23M6 21h4.5q.625 0 1.063-.437T12 19.5t-.425-1.062T10.55 18h-1.3l-.5-1.2q-.35-.825-1.1-1.312T6 15q-1.25 0-2.125.863T3 18q0 1.25.875 2.125T6 21m0 2q-2.075 0-3.537-1.463T1 18t1.463-3.537T6 13q1.5 0 2.738.813T10.575 16Q12 16.05 13 17.063t1 2.437q0 1.45-1.025 2.475T10.5 23z' : 'M12 5q-.425 0-.712-.288T11 4V2q0-.425.288-.712T12 1t.713.288T13 2v2q0 .425-.288.713T12 5m4.95 2.05q-.275-.275-.275-.7t.275-.7l1.4-1.425q.3-.3.712-.3t.713.3q.275.275.275.7t-.275.7L18.35 7.05q-.275.275-.7.275t-.7-.275M20 13q-.425 0-.713-.288T19 12t.288-.712T20 11h2q.425 0 .713.288T23 12t-.288.713T22 13zm-1.65 6.775l-1.4-1.425q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l1.425 1.4q.3.3.3.712t-.3.713t-.712.3t-.713-.3M5.65 7.05L4.225 5.625q-.275-.275-.275-.7t.275-.7q.3-.3.713-.3t.712.3l1.4 1.425q.275.275.275.7t-.275.7t-.7.275t-.7-.275M6 19h4.5q.625 0 1.063-.437T12 17.5t-.425-1.062t-1.05-.438H9.25l-.5-1.2q-.35-.825-1.1-1.312T6 13q-1.25 0-2.125.875T3 16t.875 2.125T6 19m0 2q-2.075 0-3.537-1.463T1 16t1.463-3.537T6 11q1.5 0 2.738.813T10.575 14q1.45 0 2.438 1.075T14 17.65q-.05 1.425-1.062 2.388T10.5 21zm8-3.35q-.125-.5-.25-.975t-.25-.975q1.125-.475 1.813-1.475T16 12q0-1.65-1.175-2.825T12 8q-1.5 0-2.625.975T8.05 11.45q-.5-.125-1.025-.225T6 11q.35-2.2 2.063-3.6T12 6q2.5 0 4.25 1.75T18 12q0 1.925-1.1 3.463T14 17.65M12.025 12'}/>
@@ -407,12 +420,14 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                   </TouchableOpacity>
                 </View>
                 <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  {/* 字体设置 */}
                   <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={() => {console.log('字体设置')}}>
                     <Svg width={32} height={32} viewBox='0 0 24 24'>
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d='M15 4h7v2h-7zm1 4h6v2h-6zm2 4h4v2h-4zM9.307 4l-6 16h2.137l1.875-5h6.363l1.875 5h2.137l-6-16zm-1.239 9L10.5 6.515L12.932 13z'/>
                     </Svg>
                     <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>字体设置</Text>
                   </TouchableOpacity>
+                  {/* 更多样式 */}
                   <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleStyle}>
                     <Svg width="32" height="32" viewBox="0 0 24 24">
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M13.354 8.75H4a.75.75 0 0 1 0-1.5h9.354a2.751 2.751 0 0 1 5.293 0H20a.75.75 0 0 1 0 1.5h-1.354a2.751 2.751 0 0 1-5.292 0M14.75 8a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0m-4.103 8.75H20a.75.75 0 0 0 0-1.5h-9.353a2.751 2.751 0 0 0-5.293 0H4a.75.75 0 0 0 0 1.5h1.354a2.751 2.751 0 0 0 5.292 0M6.75 16a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0"/>
@@ -423,6 +438,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
               </View>
               <View style={styles.modalRow}>
                 <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  {/* 问答助手 */}
                   <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleAssistant}>
                     <Svg width="32" height="32" viewBox="0 0 24 24">
                       <G fill={'none'} strokeWidth={1.5} stroke={isDarkMode ? 'white' : 'black'} >
@@ -557,6 +573,42 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                   </TouchableOpacity>
                 </View>
               </View>
+            </View>
+          </View>
+        </Modal>
+        {/* 目录抽屉 */}
+        <Modal
+          isVisible={isTocVisible}
+          style={{margin: 0}}
+          onBackButtonPress={toggleToc}
+          backdropOpacity={0}
+          deviceHeight={Dimensions.get('window').height}
+          deviceWidth={Dimensions.get('screen').width}
+          animationIn={'slideInRight'}
+          animationOut={'slideOutRight'}
+          animationInTiming={400}
+          animationOutTiming={300}
+        >
+          <View style={[styles.tocContent, {backgroundColor: readerStyle.backgroundColor}]}>
+            <View style={styles.tocHeader}>
+              <Text style={[styles.tocTitle, {color: readerStyle.color}]}>{getMeta().title}</Text>
+            </View>
+            <View style={styles.tocBody}>
+              <FlatList
+                data={toc}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    onPress={() => {goToLocation(item.href);toggleToc();}}
+                    style={styles.tocItem}
+                  >
+                    <Svg width={32} height={32} viewBox='0 0 24 24'>
+                      <Path fill={readerStyle.color} d='m12 16l4-4l-4-4l-1.4 1.4l1.6 1.6H8v2h4.2l-1.6 1.6zm0 6q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8'/>
+                    </Svg>
+                    <Text style={[styles.tocLabel, {color: readerStyle.color}]}>{cleanTocLabel(item.label)}</Text>
+                  </TouchableOpacity>
+                )}
+              />
             </View>
           </View>
         </Modal>
@@ -771,6 +823,39 @@ const styles = StyleSheet.create({
   },
   chatInfoText: {
     fontSize: 12,
+  },
+  tocContent: {
+    width: '100%',
+    height: '100%',
+  },
+  tocHeader: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderBottomColor: colors.lightYellow,
+    borderBottomWidth: 1,
+    borderStyle: 'dashed',
+  },
+  tocTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  tocBody: {
+    flex: 1,
+  },
+  tocItem: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: 6,
+    padding: 16,
+  },
+  tocLabel: {
+    flex: 1,
+    lineHeight: 32,
+    fontSize: 18,
+    textAlign: 'left',
   }
 });
 
