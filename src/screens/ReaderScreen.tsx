@@ -23,7 +23,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const toggleModal = () => setIsModalVisible(!isModalVisible);
 
-  // 目录抽屉状态
+  // 目录菜单状态
   const [isTocVisible, setIsTocVisible] = useState(false);
   const toggleToc = () => {
     setIsTocVisible(!isTocVisible);
@@ -33,7 +33,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     }
   };
 
-  // 字体修改抽屉状态
+  // 字体修改菜单状态
   const [isFontFamilyVisible, setIsFontFamilyVisible] = useState(false);
   const toggleFontFamily = () => {
     setIsFontFamilyVisible(!isFontFamilyVisible);
@@ -43,7 +43,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     }
   };
 
-  // 样式抽屉状态
+  // 样式菜单状态
   const [isStyleVisible, setIsStyleVisible] = useState(false);
   const toggleStyle = () => {
     setIsStyleVisible(!isStyleVisible);
@@ -53,7 +53,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     }
   };
 
-  // AI助手抽屉状态
+  // AI助手菜单状态
   const [isAssistantVisible, setIsAssistantVisible] = useState(false);
   const toggleAssistant = () => {
     setIsAssistantVisible(!isAssistantVisible);
@@ -410,19 +410,22 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
           isVisible={isModalVisible}
           onBackdropPress={toggleModal}
           onBackButtonPress={toggleModal}
-          style={styles.modal}
+          style={menuModalStyles.modal}
           backdropOpacity={0}
           animationIn={'fadeInUp'}
           animationInTiming={350}
           animationOut={'slideOutDown'}
           animationOutTiming={350}
         >
-          <View style={[styles.modalContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
-            <View style={styles.modalGrid}>
-              <View style={styles.modalRow}>
-                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+          <View style={[menuModalStyles.content, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            <View style={menuModalStyles.grid}>
+              <View style={menuModalStyles.row}>
+                <View style={[menuModalStyles.col, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
                   {/* 打开目录 */}
-                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleToc}>
+                  <TouchableOpacity 
+                    style={[menuModalStyles.item, {backgroundColor: isDarkMode ? 'black' : 'white'}]} 
+                    onPress={toggleToc}
+                  >
                     <Svg width="32" height="32" viewBox="0 0 32 32">
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M26 2H8a2 2 0 0 0-2 2v4H4v2h2v5H4v2h2v5H4v2h2v4a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2m0 26H8v-4h2v-2H8v-5h2v-2H8v-5h2V8H8V4h18Z"/>
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M14 8h8v2h-8zm0 7h8v2h-8zm0 7h8v2h-8z" />
@@ -430,23 +433,34 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                     <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>目录</Text>
                   </TouchableOpacity>
                   {/* 日夜切换 */}
-                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleMode}>
+                  <TouchableOpacity 
+                    style={[menuModalStyles.item, {backgroundColor: isDarkMode ? 'black' : 'white'}]} 
+                    onPress={toggleMode}
+                  >
                     <Svg width="32" height="32" viewBox='0 0 24 24'>
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d={!isDarkMode ? 'M13.1 23h-2.6l.5-.312q.5-.313 1.088-.7t1.087-.7l.5-.313q2.025-.15 3.738-1.225t2.712-2.875q-2.15-.2-4.075-1.088t-3.45-2.412t-2.425-3.45T9.1 5.85Q7.175 6.925 6.088 8.813T5 12.9v.3l-.3.138q-.3.137-.663.287t-.662.288l-.3.137q-.05-.275-.062-.575T3 12.9q0-3.65 2.325-6.437T11.25 3q-.45 2.475.275 4.838t2.5 4.137t4.138 2.5T23 14.75q-.65 3.6-3.45 5.925T13.1 23M6 21h4.5q.625 0 1.063-.437T12 19.5t-.425-1.062T10.55 18h-1.3l-.5-1.2q-.35-.825-1.1-1.312T6 15q-1.25 0-2.125.863T3 18q0 1.25.875 2.125T6 21m0 2q-2.075 0-3.537-1.463T1 18t1.463-3.537T6 13q1.5 0 2.738.813T10.575 16Q12 16.05 13 17.063t1 2.437q0 1.45-1.025 2.475T10.5 23z' : 'M12 5q-.425 0-.712-.288T11 4V2q0-.425.288-.712T12 1t.713.288T13 2v2q0 .425-.288.713T12 5m4.95 2.05q-.275-.275-.275-.7t.275-.7l1.4-1.425q.3-.3.712-.3t.713.3q.275.275.275.7t-.275.7L18.35 7.05q-.275.275-.7.275t-.7-.275M20 13q-.425 0-.713-.288T19 12t.288-.712T20 11h2q.425 0 .713.288T23 12t-.288.713T22 13zm-1.65 6.775l-1.4-1.425q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l1.425 1.4q.3.3.3.712t-.3.713t-.712.3t-.713-.3M5.65 7.05L4.225 5.625q-.275-.275-.275-.7t.275-.7q.3-.3.713-.3t.712.3l1.4 1.425q.275.275.275.7t-.275.7t-.7.275t-.7-.275M6 19h4.5q.625 0 1.063-.437T12 17.5t-.425-1.062t-1.05-.438H9.25l-.5-1.2q-.35-.825-1.1-1.312T6 13q-1.25 0-2.125.875T3 16t.875 2.125T6 19m0 2q-2.075 0-3.537-1.463T1 16t1.463-3.537T6 11q1.5 0 2.738.813T10.575 14q1.45 0 2.438 1.075T14 17.65q-.05 1.425-1.062 2.388T10.5 21zm8-3.35q-.125-.5-.25-.975t-.25-.975q1.125-.475 1.813-1.475T16 12q0-1.65-1.175-2.825T12 8q-1.5 0-2.625.975T8.05 11.45q-.5-.125-1.025-.225T6 11q.35-2.2 2.063-3.6T12 6q2.5 0 4.25 1.75T18 12q0 1.925-1.1 3.463T14 17.65M12.025 12'}/>
                     </Svg>
                     <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>{isDarkMode ? '进入日间' : '进入夜间'}</Text>
                   </TouchableOpacity>
                 </View>
-                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                <View 
+                  style={[menuModalStyles.col, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}
+                >
                   {/* 字体设置 */}
-                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleFontFamily}>
+                  <TouchableOpacity 
+                    style={[menuModalStyles.item, {backgroundColor: isDarkMode ? 'black' : 'white'}]} 
+                    onPress={toggleFontFamily}
+                  >
                     <Svg width={32} height={32} viewBox='0 0 24 24'>
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d='M15 4h7v2h-7zm1 4h6v2h-6zm2 4h4v2h-4zM9.307 4l-6 16h2.137l1.875-5h6.363l1.875 5h2.137l-6-16zm-1.239 9L10.5 6.515L12.932 13z'/>
                     </Svg>
                     <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>字体设置</Text>
                   </TouchableOpacity>
                   {/* 更多样式 */}
-                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleStyle}>
+                  <TouchableOpacity 
+                    style={[menuModalStyles.item, {backgroundColor: isDarkMode ? 'black' : 'white'}]} 
+                    onPress={toggleStyle}
+                  >
                     <Svg width="32" height="32" viewBox="0 0 24 24">
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d="M13.354 8.75H4a.75.75 0 0 1 0-1.5h9.354a2.751 2.751 0 0 1 5.293 0H20a.75.75 0 0 1 0 1.5h-1.354a2.751 2.751 0 0 1-5.292 0M14.75 8a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0m-4.103 8.75H20a.75.75 0 0 0 0-1.5h-9.353a2.751 2.751 0 0 0-5.293 0H4a.75.75 0 0 0 0 1.5h1.354a2.751 2.751 0 0 0 5.292 0M6.75 16a1.25 1.25 0 1 1 2.5 0a1.25 1.25 0 0 1-2.5 0"/>
                     </Svg>
@@ -454,10 +468,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                   </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.modalRow}>
-                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+              <View style={menuModalStyles.row}>
+                <View style={[menuModalStyles.col, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
                   {/* 问答助手 */}
-                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleAssistant}>
+                  <TouchableOpacity 
+                    style={[menuModalStyles.item, {backgroundColor: isDarkMode ? 'black' : 'white'}]} 
+                    onPress={toggleAssistant}
+                  >
                     <Svg width="32" height="32" viewBox="0 0 24 24">
                       <G fill={'none'} strokeWidth={1.5} stroke={isDarkMode ? 'white' : 'black'} >
                         <Path d="M14.17 20.89c4.184-.277 7.516-3.657 7.79-7.9c.053-.83.053-1.69 0-2.52c-.274-4.242-3.606-7.62-7.79-7.899a33 33 0 0 0-4.34 0c-4.184.278-7.516 3.657-7.79 7.9a20 20 0 0 0 0 2.52c.1 1.545.783 2.976 1.588 4.184c.467.845.159 1.9-.328 2.823c-.35.665-.526.997-.385 1.237c.14.24.455.248 1.084.263c1.245.03 2.084-.322 2.75-.813c.377-.279.566-.418.696-.434s.387.09.899.3c.46.19.995.307 1.485.34c1.425.094 2.914.094 4.342 0"/>
@@ -467,17 +484,17 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                     <Text style={{fontSize: 12, color: isDarkMode ? 'white' : 'black'}}>问答助手</Text>
                   </TouchableOpacity>
                 </View>
-                <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                <View style={[menuModalStyles.col, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
                   <TouchableOpacity
-                    style={[styles.colorButton, { backgroundColor: '#ffffff' }, {borderColor: readerStyle.backgroundColor === '#ffffff' ? '#f43f5e' : '#ffffff'}]}
+                    style={[menuModalStyles.colorButton, { backgroundColor: '#ffffff' }, {borderColor: readerStyle.backgroundColor === '#ffffff' ? '#f43f5e' : '#ffffff'}]}
                     onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#ffffff', color: '#000000' })}
                   />
                   <TouchableOpacity
-                    style={[styles.colorButton, { backgroundColor: '#faebd7' }, {borderColor: readerStyle.backgroundColor === '#faebd7' ? '#f43f5e' : '#ffffff'}]}
+                    style={[menuModalStyles.colorButton, { backgroundColor: '#faebd7' }, {borderColor: readerStyle.backgroundColor === '#faebd7' ? '#f43f5e' : '#ffffff'}]}
                     onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#faebd7', color: '#000000' })}
                   />
                   <TouchableOpacity
-                    style={[styles.colorButton, { backgroundColor: '#000000' }, {borderColor: readerStyle.backgroundColor === '#000000' ? '#f43f5e' : '#ffffff'}]}
+                    style={[menuModalStyles.colorButton, { backgroundColor: '#000000' }, {borderColor: readerStyle.backgroundColor === '#000000' ? '#f43f5e' : '#ffffff'}]}
                     onPress={() => setReaderStyle({...readerStyle, backgroundColor: '#000000', color: '#ffffff' })}
                   />
                 </View>
@@ -485,32 +502,32 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
             </View>
           </View>
         </Modal>
-        {/* 字体设置抽屉 */}
+        {/* 字体设置菜单 */}
         <Modal
           isVisible={isFontFamilyVisible}
           onBackdropPress={toggleFontFamily}
           onBackButtonPress={toggleFontFamily}
-          style={styles.fontModal}
+          style={fontModalStyles.modal}
           backdropOpacity={0}
           animationIn={'fadeInUp'}
           animationOut={'fadeOutDown'}
           animationInTiming={300}
           animationOutTiming={100}
         >
-          <View style={[styles.fontFamilyContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
-            <View style={styles.fontFamilyHeader}>
+          <View style={[fontModalStyles.content, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            <View style={fontModalStyles.header}>
               <Text style={{color: isDarkMode ? '#fff' : '#000', fontSize: 18}}>字体设置</Text>
             </View>
-            <View style={styles.fontFamilyBody}>
+            <View style={fontModalStyles.body}>
               <FlatList
                 data={fontFamily}
                 numColumns={2}
-                columnWrapperStyle={styles.fontFamilyColumn}
+                columnWrapperStyle={fontModalStyles.columnWrapper}
                 horizontal={false}
                 keyExtractor={(item) => item.key}
                 renderItem={({ item }) => (
                   <TouchableOpacity 
-                    style={[styles.fontFamilyItem, 
+                    style={[fontModalStyles.item, 
                       {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}, 
                       {borderColor: readerStyle.fontFamily === item.key ? colors.lightYellow : 'transparent'}
                     ]} 
@@ -518,60 +535,62 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                       setReaderStyle({...readerStyle, fontFamily: item.key});
                     }}
                   >
-                    <Text style={[styles.fontFamilyLabel, {color: isDarkMode ? '#fff' : '#000'}]}>{item.label}</Text>
+                    <Text style={[fontModalStyles.label, {color: isDarkMode ? '#fff' : '#000'}]}>{item.label}</Text>
                   </TouchableOpacity>
                 )}
               />
             </View>
           </View>
         </Modal>
-        {/* 样式抽屉 */}
+        {/* 样式菜单 */}
         <Modal
           isVisible={isStyleVisible}
           onBackdropPress={toggleStyle}
           onBackButtonPress={toggleStyle}
-          style={styles.styleModal}
+          style={styleModalStyles.modal}
           animationIn={'zoomIn'}
           animationInTiming={300}
           animationOut={'zoomOut'}
           animationOutTiming={300}
           backdropOpacity={0}
         >
-          <View style={[styles.styleContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+          <View style={[styleModalStyles.content, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
             {moreStyles.map((style) => (
-              <View style={styles.styleContainer} key={style.key}>
-                <View style={[styles.styleLabelContainer, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
-                  <Text style={[styles.styleLabel, {color: isDarkMode ? '#e5e7eb' : '#525252'}]}>{style.text}</Text>
-                  <View style={[styles.controlContainer, {backgroundColor: isDarkMode ? 'black' : 'white'}]}>
-                    <TouchableOpacity 
-                      onPress={() => decrementStyle(style.key as keyof typeof readerStyle, style.step, style.min)} 
-                      style={styles.controlButton}
-                    >
-                      <Svg width="24" height="24" viewBox="0 0 24 24">
-                        <Path fill={isDarkMode ? colors.lightGrey : colors.darkGrey} d='M18 12.998H6a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2'/>
-                      </Svg>
-                    </TouchableOpacity>
-                    <Text style={[styles.styleValue, {color: isDarkMode ? 'white' : 'black'}]}>{readerStyle[style.key as keyof typeof readerStyle]}</Text>
-                    <TouchableOpacity 
-                      onPress={() => incrementStyle(style.key as keyof typeof readerStyle, style.step, style.max)} 
-                      style={styles.controlButton}
-                    >
-                      <Svg width="24" height="24" viewBox="0 0 24 24">
-                        <Path fill={isDarkMode ? colors.lightGrey : colors.darkGrey} d='M13 13v7a1 1 0 0 1-2 0v-7H4a1 1 0 0 1 0-2h7V4a1 1 0 0 1 2 0v7h7a1 1 0 0 1 0 2z'/>
-                      </Svg>
-                    </TouchableOpacity>
-                  </View>
+              <View style={[styleModalStyles.container, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]} key={style.key}>
+                <Text style={[styleModalStyles.label, {color: isDarkMode ? '#e5e7eb' : '#525252'}]}>{style.text}</Text>
+                <View style={[styleModalStyles.controlContainer, {backgroundColor: isDarkMode ? 'black' : 'white'}]}>
+                  <TouchableOpacity 
+                    onPress={() => decrementStyle(style.key as keyof typeof readerStyle, style.step, style.min)} 
+                    style={styleModalStyles.controlButton}
+                  >
+                    <Svg width="24" height="24" viewBox="0 0 24 24">
+                      <Path fill={isDarkMode ? colors.lightGrey : colors.darkGrey} d='M18 12.998H6a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2'/>
+                    </Svg>
+                  </TouchableOpacity>
+                  <Text 
+                    style={[styleModalStyles.value, {color: isDarkMode ? 'white' : 'black'}]}
+                  >
+                    {readerStyle[style.key as keyof typeof readerStyle]}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => incrementStyle(style.key as keyof typeof readerStyle, style.step, style.max)} 
+                    style={styleModalStyles.controlButton}
+                  >
+                    <Svg width="24" height="24" viewBox="0 0 24 24">
+                      <Path fill={isDarkMode ? colors.lightGrey : colors.darkGrey} d='M13 13v7a1 1 0 0 1-2 0v-7H4a1 1 0 0 1 0-2h7V4a1 1 0 0 1 2 0v7h7a1 1 0 0 1 0 2z'/>
+                    </Svg>
+                  </TouchableOpacity>
                 </View>
               </View>
             ))}
           </View> 
         </Modal>
-        {/* 问答助手抽屉 */}
+        {/* 问答助手菜单 */}
         <Modal
           isVisible={isAssistantVisible}
           onBackdropPress={toggleAssistant}
           onBackButtonPress={toggleAssistant}
-          style={styles.assistantModal}
+          style={chatModalStyles.modal}
           backdropOpacity={0}
           backdropTransitionOutTiming={1}
           animationIn={'fadeInUp'}
@@ -579,15 +598,26 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
           animationInTiming={300}
           animationOutTiming={100}
         >
-          <View style={[styles.assistantContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
-            <View style={styles.chatBodyWrapper}>
+          <View style={[chatModalStyles.content, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            <View style={chatModalStyles.body}>
               <FlatList
-                style={styles.chatList}
+                style={chatModalStyles.list}
                 data={chatHistory}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
-                  <View style={[styles.chatContent, item.role === 'user' ? styles.chatUser : styles.chatAssistant]}>
-                    <View style={[styles.chatBubble, item.role === 'user' ? styles.chatBubbleUser : styles.chatBubbleAssistant, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <View 
+                    style={[
+                      chatModalStyles.messageContainer,
+                      item.role === 'user' ? chatModalStyles.user : chatModalStyles.assistant
+                    ]}
+                  >
+                    <View 
+                      style={[
+                        chatModalStyles.bubble,
+                        item.role === 'user' ? chatModalStyles.bubbleUser : chatModalStyles.bubbleAssistant,
+                        {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}
+                      ]}
+                    >
                       <Text style={{color: isDarkMode ? '#fff' : '#000', opacity: item.content === '' ? 0.3 : 1}}>
                         {item.content === '' ? '正在思考中...' : item.content}
                       </Text>
@@ -595,36 +625,53 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                   </View>
                 )}
                 ListEmptyComponent={
-                  <View style={styles.chatWelcome}>
-                    <Text style={{fontSize: 20, fontWeight: 'bold', color: isDarkMode ? '#fff' : '#000'}}>嗨！我是你的问答助手</Text>
-                    <Text style={{color: isDarkMode ? colors.lightGrey : colors.darkGrey}}>我可以帮你回答有关此书的疑惑~</Text>
+                  <View style={chatModalStyles.welcome}>
+                    <Text 
+                      style={{fontSize: 20, fontWeight: 'bold', color: isDarkMode ? '#fff' : '#000'}}
+                    >
+                      嗨！我是你的问答助手
+                    </Text>
+                    <Text 
+                      style={{color: isDarkMode ? colors.lightGrey : colors.darkGrey}}
+                    >
+                      我可以帮你回答有关此书的疑惑~
+                    </Text>
                   </View>
                 }
-                contentContainerStyle={styles.chatContainer}
+                contentContainerStyle={chatModalStyles.listContainer}
               />
             </View>
-            <View style={styles.chatFooter}>
+            <View style={chatModalStyles.footer}>
               <TextInput 
                 onChangeText={onChangeQuestionInput} 
                 value={questionInput}
-                style={[styles.chatInput, {backgroundColor: isDarkMode ? '#737373' : '#fff', color: isDarkMode ? '#fff' : '#000'}]}
+                style={[
+                  chatModalStyles.input, 
+                  {backgroundColor: isDarkMode ? '#737373' : '#fff', color: isDarkMode ? '#fff' : '#000'}
+                ]}
               />
-              <View style={styles.chatOptions}>
+              <View style={chatModalStyles.options}>
                 <View>
                   <TouchableOpacity
                     activeOpacity={1}
-                    style={[styles.chatInfoButton, {backgroundColor: '#e5e7eb'}]}
+                    style={[chatModalStyles.infoButton, {backgroundColor: '#e5e7eb'}]}
                   >
-                    <Text style={[styles.chatInfoText, {color: '#9ca3af'}]}>流式输出</Text>
+                    <Text style={[chatModalStyles.infoLabel, {color: '#9ca3af'}]}>流式输出</Text>
                   </TouchableOpacity>
                 </View>
-                <View style={styles.chatOptionsEnd}>
-                  <TouchableOpacity onPress={resetChat} style={[styles.chatButton, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                <View style={chatModalStyles.optionsEnd}>
+                  <TouchableOpacity 
+                    onPress={resetChat} 
+                    style={[chatModalStyles.button, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}
+                  >
                     <Svg width={24} height={24} viewBox='0 0 24 24'>
                       <Path stroke={isDarkMode ? '#fff' : '#000'} strokeWidth={2} d='M18 12h-6m0 0H6m6 0V6m0 6v6'></Path>
                     </Svg>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={sendQuestion} style={[styles.chatButton, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
+                  <TouchableOpacity 
+                    onPress={sendQuestion} 
+                    style={[chatModalStyles.button, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}
+                  >
                     <Svg width={24} height={24} viewBox='0 0 24 24'>
                       <Path stroke={isDarkMode ? '#fff' : '#000'} strokeWidth={2} d='M12 5v14m6-8l-6-6m-6 6l6-6'></Path>
                     </Svg>
@@ -634,10 +681,10 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
             </View>
           </View>
         </Modal>
-        {/* 目录抽屉 */}
+        {/* 目录菜单 */}
         <Modal
           isVisible={isTocVisible}
-          style={{margin: 0}}
+          style={tocModalStyles.modal}
           onBackButtonPress={toggleToc}
           backdropOpacity={0}
           deviceHeight={Dimensions.get('window').height}
@@ -647,23 +694,23 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
           animationInTiming={400}
           animationOutTiming={300}
         >
-          <View style={[styles.tocContent, {backgroundColor: readerStyle.backgroundColor}]}>
-            <View style={styles.tocHeader}>
-              <Text style={[styles.tocTitle, {color: readerStyle.color}]}>{getMeta().title}</Text>
+          <View style={[tocModalStyles.content, {backgroundColor: readerStyle.backgroundColor}]}>
+            <View style={tocModalStyles.header}>
+              <Text style={[tocModalStyles.title, {color: readerStyle.color}]}>{getMeta().title}</Text>
             </View>
-            <View style={styles.tocBody}>
+            <View style={tocModalStyles.body}>
               <FlatList
                 data={toc}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity 
                     onPress={() => {goToLocation(item.href);toggleToc();}}
-                    style={styles.tocItem}
+                    style={tocModalStyles.item}
                   >
                     <Svg width={32} height={32} viewBox='0 0 24 24'>
                       <Path fill={readerStyle.color} d='m12 16l4-4l-4-4l-1.4 1.4l1.6 1.6H8v2h4.2l-1.6 1.6zm0 6q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8'/>
                     </Svg>
-                    <Text style={[styles.tocLabel, {color: readerStyle.color}]}>{cleanTocLabel(item.label)}</Text>
+                    <Text style={[tocModalStyles.label, {color: readerStyle.color}]}>{cleanTocLabel(item.label)}</Text>
                   </TouchableOpacity>
                 )}
               />
@@ -674,7 +721,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     </>
   );
 };
-
+// 常规样式
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -697,24 +744,26 @@ const styles = StyleSheet.create({
   gestureRight: {
     flex: 1,
   },
-  modal:{
+});
+// 通用菜单
+const menuModalStyles = StyleSheet.create({
+  modal: {
     justifyContent: 'flex-end',
   },
-  modalContent: {
-    backgroundColor: '#d4d4d4',
+  content: {
     borderRadius: 15,
   },
-  modalGrid: {
+  grid: {
     padding: 12,
     flexDirection: 'column',
     gap: 10,
   },
-  modalRow: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 10,
   },
-  modalCol: {
+  col: {
     padding: 8,
     flex: 1,
     flexDirection: 'row',
@@ -723,7 +772,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 10,
   },
-  modalItem: {
+  item: {
     flex: 1,
     paddingTop: 6,
     paddingBottom: 3,
@@ -740,32 +789,35 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     borderWidth: 1,
     alignSelf: 'center',
-  },
-  fontModal: {
+  }
+});
+// 字体设置菜单
+const fontModalStyles = StyleSheet.create({
+  modal: {
     justifyContent: 'flex-end',
   },
-  fontFamilyContent: {
+  content: {
     flexDirection: 'column',
     borderRadius: 5,
     boxShadow: '0 0 2px rgba(0, 0, 0, 0.25)',
   },
-  fontFamilyHeader: {
+  header: {
     paddingVertical: 6,
     justifyContent: 'center',
     alignItems: 'center',
     borderBottomWidth: 0.5,
     borderBottomColor: colors.lightGrey,
   },
-  fontFamilyBody: {
+  body: {
     padding: 12,
     paddingBottom: 4
   },
-  fontFamilyColumn: {
+  columnWrapper: {
     justifyContent: 'space-between',
     gap: 4, 
     marginBottom: 8
   },
-  fontFamilyItem: {
+  item: {
     width: '48%',
     height: 40,
     justifyContent: 'center',
@@ -773,16 +825,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  fontFamilyLabel: {
+  label: {
     fontSize: 16,
-  },
-  styleModal: {
+  }
+});
+// 样式菜单
+const styleModalStyles = StyleSheet.create({
+  modal: {
     height: 'auto',
     alignSelf: 'center',
     justifyContent: 'center',
     borderRadius: 15,
   },
-  styleContent: {
+  content: {
     flexDirection: 'column',
     backgroundColor: '#d4d4d4',
     padding: 12,
@@ -790,10 +845,7 @@ const styles = StyleSheet.create({
     gap: 10,
     boxShadow: '0 0 6px rgba(0, 0, 0, 0.5)',
   },
-  styleContainer: {
-    flexDirection: 'column',
-  },
-  styleLabelContainer: {
+  container: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
@@ -803,7 +855,7 @@ const styles = StyleSheet.create({
     paddingTop: 3,
     gap: 3,
   },
-  styleLabel: {
+  label: {
     fontSize: 14,
   },
   controlContainer: {
@@ -819,7 +871,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 10,
   },
-  styleValue: {
+  value: {
     position: 'absolute',
     left: 0,
     right: 0,
@@ -831,75 +883,78 @@ const styles = StyleSheet.create({
     height: 26,
     alignItems: 'center',
   },
-  assistantModal: {
+});
+// AI助手
+const chatModalStyles = StyleSheet.create({
+  modal: {
     justifyContent: 'flex-end',
   },
-  assistantContent: {
+  content: {
     display: 'flex',
     flexDirection: 'column',
     borderRadius: 15,
     boxShadow: '0 0 6px rgba(0, 0, 0, 0.25)',
   },
-  chatBodyWrapper: {
+  body: {
     flexDirection: 'column',
     maxHeight: Dimensions.get('window').height * 0.6,
     marginVertical: 6,
   },
-  chatList: {
+  list: {
     flex: 0,
   },
-  chatContainer: {
+  listContainer: {
     padding: 12,
     flexDirection: 'column',
     flexGrow: 1,
     gap: 6,
   },
-  chatWelcome: {
+  welcome: {
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chatContent: {
+  messageContainer: {
     width: '100%',
     flexDirection: 'row',
   },
-  chatUser: {
+  user: {
     justifyContent: 'flex-end',
   },
-  chatAssistant: {
+  assistant: {
     justifyContent: 'flex-start',
   },
-  chatBubble: {
+  bubble: {
     padding: 8,
     borderRadius: 10,
   },
-  chatBubbleUser: {
+  bubbleUser: {
     backgroundColor: '#f5f5f5',
   },
-  chatBubbleAssistant: {
+  bubbleAssistant: {
     backgroundColor: '#f5f5f5',
   },
-  chatFooter: {
+  footer: {
     flexDirection: 'column',
     paddingHorizontal: 12,
     marginBottom: 6,
     gap: 5,
   },
-  chatInput: {
+  input: {
     minHeight: 40,
     borderRadius: 10,
     padding: 6,
   },
-  chatOptions: {
+  options: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  chatOptionsEnd: {
+  optionsEnd: {
     gap: 10,
     flexDirection: 'row',
   },
-  chatButton: {
+  button: {
     width: 32,
     height: 32,
     backgroundColor: '#000',
@@ -907,21 +962,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chatInfoButton: {
+  infoButton: {
     height: 28,
     borderRadius: 10,
     paddingHorizontal: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chatInfoText: {
+  infoLabel: {
     fontSize: 12,
+  }
+});
+// 目录菜单
+const tocModalStyles = StyleSheet.create({
+  modal: {
+    margin: 0,
   },
-  tocContent: {
+  content: {
     width: '100%',
     height: '100%',
   },
-  tocHeader: {
+  header: {
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 12,
@@ -930,26 +991,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderStyle: 'dashed',
   },
-  tocTitle: {
+  title: {
     fontSize: 20,
     fontWeight: 'bold',
   },
-  tocBody: {
+  body: {
     flex: 1,
   },
-  tocItem: {
+  item: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'flex-start',
     gap: 6,
     padding: 16,
   },
-  tocLabel: {
+  label: {
     flex: 1,
     lineHeight: 32,
     fontSize: 18,
     textAlign: 'left',
   }
 });
-
 export default ReaderScreen;

@@ -228,6 +228,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       />
       <TouchableWithoutFeedback onPress={handleCasualPress}>
         <View style={styles.container}>
+          {/* 加载动画 */}
           <LoadingAnimation animationType={loadingType} isVisible={loading} message={loadingMessage} onBackdropPress={() => console.log("Pretend to Stop")}/>
           <View style={styles.header}>
             <Text style={styles.headerText}>书架</Text>
@@ -264,6 +265,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
             activeTab='home'
             onTabPress={(key) => openSetting(key)}
           />
+          {/* 底部操作菜单 */}
           <Modal
             isVisible={isBottomSheetVisible}
             onBackButtonPress={toggleBottomSheet}
@@ -278,28 +280,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
             useNativeDriver={true}
             backdropTransitionOutTiming={1}
             hideModalContentWhileAnimating={false}
-            style={{justifyContent: 'flex-end'}}
+            style={bottomSheetModalStyles.modal}
           >
-            <View style={styles.bottomSheetView}>
-              <View style={styles.bottomSheetBook}>
-                <View style={styles.bottomSheetBookInfo}>
+            <View style={bottomSheetModalStyles.content}>
+              <View style={bottomSheetModalStyles.header}>
+                <View style={bottomSheetModalStyles.bookInfo}>
                   <Image 
                     defaultSource={require('../assets/default_cover.png')} 
                     source={{ uri: selectedBook?.cover }} 
-                    style={styles.bookOptionCover}
+                    style={bottomSheetModalStyles.bookCover}
                   />
-                  <View style={styles.bottomSheetBookDetail}>
+                  <View style={bottomSheetModalStyles.bookDetail}>
                     <Text>{selectedBook?.title}</Text>
                     <Text style={{fontSize: 12, color: colors.grey}}>{selectedBook?.author}</Text>
                   </View>
                 </View>
               </View>
-              <View style={styles.bottomSheetOptions}>
+              <View style={bottomSheetModalStyles.footer}>
                 {bookOptions.map((option) => (
                   <TouchableOpacity
                     key={option.key}
                     onPress={() => handleBookAction(selectedBookId!, option.key)}
-                    style={styles.bottomSheetItem}
+                    style={bottomSheetModalStyles.optionItem}
                   >
                     <Svg
                       width={32}
@@ -325,6 +327,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   );
 };
 
+// 常规样式
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -370,14 +373,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     width: 100,
   },
-  bottomSheetView: {
+});
+// 底部选项卡样式
+const bottomSheetModalStyles = StyleSheet.create({
+  modal: {
+    justifyContent: 'flex-end',
+  },
+  content: {
     width: '100%',
     backgroundColor: 'white',
     padding: 10,
     flexDirection: 'column',
     borderRadius: 10,
   },
-  bottomSheetBook: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'flex-start', // space-between
     alignItems: 'center',
@@ -385,33 +394,32 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingBottom: 10,
   },
-  bottomSheetBookInfo: {
+  bookInfo: {
     width: '80%',
     flexDirection: 'row',
   },
-  bookOptionCover: {
+  bookCover: {
     width: 50,
     height: 75,
     resizeMode: 'cover',
   },
-  bottomSheetBookDetail: {
+  bookDetail: {
     flexDirection: 'column',
     justifyContent: 'center',
     gap: 6,
     marginLeft: 10,
   },
-  bottomSheetOptions: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 15,
   },
-  bottomSheetItem: {
+  optionItem: {
     width: 80,
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
   }
-});
-
+})
 export default HomeScreen;
