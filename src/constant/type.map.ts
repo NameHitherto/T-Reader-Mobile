@@ -48,3 +48,16 @@ export interface ModelRequestOptions {
     onComplete?: (fullResponse: string) => void; // 完成回调
     onError?: (error: any) => void; // 错误回调
 }
+
+/**
+ * 阅读器可调整样式参数
+ */
+export interface ReaderStyle {
+    backgroundColor: string; // 背景颜色
+    color: string; // 字体颜色
+    fontFamily: string; // 字体
+    fontSize: number; // 字体大小
+    textIndent: number; // 首行缩进
+    padding: number; // 内边距
+    lineHeight: number; // 行高
+}

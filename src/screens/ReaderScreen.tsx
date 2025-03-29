@@ -11,7 +11,7 @@ import LoadingAnimation from '../component/LoadingAnimation';
 import Svg, { Path, G } from 'react-native-svg';
 import { colors } from '../styles/global';
 import { ReaderScreenNavigationProp, ReaderScreenRouteProp } from '../route/navigation-types';
-import { ModelMessage } from '../constant/type.map';
+import { ModelMessage, ReaderStyle } from '../constant/type.map';
 
 type ReaderScreenProps = {
   navigation: ReaderScreenNavigationProp;
@@ -27,6 +27,16 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   const [isTocVisible, setIsTocVisible] = useState(false);
   const toggleToc = () => {
     setIsTocVisible(!isTocVisible);
+    // 若菜单弹窗显示，则关闭菜单弹窗
+    if(isModalVisible) {
+      setIsModalVisible(false);
+    }
+  };
+
+  // 字体修改抽屉状态
+  const [isFontFamilyVisible, setIsFontFamilyVisible] = useState(false);
+  const toggleFontFamily = () => {
+    setIsFontFamilyVisible(!isFontFamilyVisible);
     // 若菜单弹窗显示，则关闭菜单弹窗
     if(isModalVisible) {
       setIsModalVisible(false);
@@ -60,10 +70,11 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   const [bookContent, setBookContent] = useState<string>('');
 
   // 阅读器样式设置
-  const [readerStyle, setReaderStyle] = useState({
+  const [readerStyle, setReaderStyle] = useState<ReaderStyle>({
     backgroundColor: '#ffffff',
     color: '#000000',
     fontSize: 16,
+    fontFamily: 'default',
     textIndent: 0,
     padding: 10,
     lineHeight: 1.5,
@@ -83,7 +94,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   }, [readerStyle]);
   
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize, toc, getMeta } = useReader();
+  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize, changeFontFamily, toc, getMeta, theme } = useReader();
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
@@ -94,7 +105,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     {key: 'textIndent', text: '首行缩进', step: 1, min: 0, max: 10},
     {key: 'padding', text: '内边距', step: 1, min: 0, max: 20},
     {key: 'lineHeight', text: '行距', step: 0.1, min: 1, max: 3},
-  ]
+  ];
+  // 字体
+  const fontFamily = [
+    {key: 'initial', label: '系统默认'},
+    {key: 'Arial, sans-serif', label: 'Arial'},
+    {key: 'Georgia, serif', label: 'Georgia'},
+  ];
 
   useEffect(() => {
     // 加载书籍的信息
@@ -250,6 +267,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   // 应用阅读器样式
   const applyReaderStyle = () => {
     changeFontSize(`${readerStyle.fontSize}px`);
+    changeFontFamily(readerStyle.fontFamily);
     changeTheme({
       body: {
         'background': `${readerStyle.backgroundColor}`,
@@ -421,7 +439,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                 </View>
                 <View style={[styles.modalCol, {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}]}>
                   {/* 字体设置 */}
-                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={() => {console.log('字体设置')}}>
+                  <TouchableOpacity style={[styles.modalItem, {backgroundColor: isDarkMode ? 'black' : 'white'}]} onPress={toggleFontFamily}>
                     <Svg width={32} height={32} viewBox='0 0 24 24'>
                       <Path strokeWidth={0} fill={isDarkMode ? 'white' : 'black'} d='M15 4h7v2h-7zm1 4h6v2h-6zm2 4h4v2h-4zM9.307 4l-6 16h2.137l1.875-5h6.363l1.875 5h2.137l-6-16zm-1.239 9L10.5 6.515L12.932 13z'/>
                     </Svg>
@@ -464,6 +482,46 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                   />
                 </View>
               </View>
+            </View>
+          </View>
+        </Modal>
+        {/* 字体设置抽屉 */}
+        <Modal
+          isVisible={isFontFamilyVisible}
+          onBackdropPress={toggleFontFamily}
+          onBackButtonPress={toggleFontFamily}
+          style={styles.fontModal}
+          backdropOpacity={0}
+          animationIn={'fadeInUp'}
+          animationOut={'fadeOutDown'}
+          animationInTiming={300}
+          animationOutTiming={100}
+        >
+          <View style={[styles.fontFamilyContent, {backgroundColor: isDarkMode ? '#a3a3a3' : '#d4d4d4'}]}>
+            <View style={styles.fontFamilyHeader}>
+              <Text style={{color: isDarkMode ? '#fff' : '#000', fontSize: 18}}>字体设置</Text>
+            </View>
+            <View style={styles.fontFamilyBody}>
+              <FlatList
+                data={fontFamily}
+                numColumns={2}
+                columnWrapperStyle={styles.fontFamilyColumn}
+                horizontal={false}
+                keyExtractor={(item) => item.key}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={[styles.fontFamilyItem, 
+                      {backgroundColor: isDarkMode ? '#737373' : '#f5f5f5'}, 
+                      {borderColor: readerStyle.fontFamily === item.key ? colors.lightYellow : 'transparent'}
+                    ]} 
+                    onPress={() => {
+                      setReaderStyle({...readerStyle, fontFamily: item.key});
+                    }}
+                  >
+                    <Text style={[styles.fontFamilyLabel, {color: isDarkMode ? '#fff' : '#000'}]}>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+              />
             </View>
           </View>
         </Modal>
@@ -682,6 +740,41 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     borderWidth: 1,
     alignSelf: 'center',
+  },
+  fontModal: {
+    justifyContent: 'flex-end',
+  },
+  fontFamilyContent: {
+    flexDirection: 'column',
+    borderRadius: 5,
+    boxShadow: '0 0 2px rgba(0, 0, 0, 0.25)',
+  },
+  fontFamilyHeader: {
+    paddingVertical: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.lightGrey,
+  },
+  fontFamilyBody: {
+    padding: 12,
+    paddingBottom: 4
+  },
+  fontFamilyColumn: {
+    justifyContent: 'space-between',
+    gap: 4, 
+    marginBottom: 8
+  },
+  fontFamilyItem: {
+    width: '48%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  fontFamilyLabel: {
+    fontSize: 16,
   },
   styleModal: {
     height: 'auto',
