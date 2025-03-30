@@ -12,6 +12,7 @@ import Svg, { Path, G } from 'react-native-svg';
 import { colors } from '../styles/global';
 import { ReaderScreenNavigationProp, ReaderScreenRouteProp } from '../route/navigation-types';
 import { ModelMessage, ReaderStyle } from '../constant/type.map';
+import TocList from '../component/TocList';
 
 type ReaderScreenProps = {
   navigation: ReaderScreenNavigationProp;
@@ -94,7 +95,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   }, [readerStyle]);
   
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize, changeFontFamily, toc, getMeta, theme } = useReader();
+  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize, changeFontFamily, toc, getMeta } = useReader();
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
@@ -699,20 +700,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
               <Text style={[tocModalStyles.title, {color: readerStyle.color}]}>{getMeta().title}</Text>
             </View>
             <View style={tocModalStyles.body}>
-              <FlatList
-                data={toc}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    onPress={() => {goToLocation(item.href);toggleToc();}}
-                    style={tocModalStyles.item}
-                  >
-                    <Svg width={32} height={32} viewBox='0 0 24 24'>
-                      <Path fill={readerStyle.color} d='m12 16l4-4l-4-4l-1.4 1.4l1.6 1.6H8v2h4.2l-1.6 1.6zm0 6q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8'/>
-                    </Svg>
-                    <Text style={[tocModalStyles.label, {color: readerStyle.color}]}>{cleanTocLabel(item.label)}</Text>
-                  </TouchableOpacity>
-                )}
+              <TocList
+                toc={toc}
+                textColor={readerStyle.color}
+                onItemPress={(href) => {
+                  goToLocation(href);
+                  toggleToc();
+                }}
               />
             </View>
           </View>
@@ -992,24 +986,11 @@ const tocModalStyles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   body: {
     flex: 1,
-  },
-  item: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 6,
-    padding: 16,
-  },
-  label: {
-    flex: 1,
-    lineHeight: 32,
-    fontSize: 18,
-    textAlign: 'left',
   }
 });
 export default ReaderScreen;
