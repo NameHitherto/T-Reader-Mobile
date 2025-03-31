@@ -20,15 +20,17 @@ interface FlattenedTocItem extends TocItem {
   parent: string;
   hasChildren: boolean;
   isVisible: boolean;
+  isActive: boolean;
 }
 
 interface TocListProps {
   toc: TocItem[];
   textColor: string;
+  currentChapter: string;
   onItemPress: (href: string) => void;
 }
 
-const TocList: React.FC<TocListProps> = ({ toc, textColor, onItemPress }) => {
+const TocList: React.FC<TocListProps> = ({ toc, textColor, currentChapter, onItemPress }) => {
   // 追踪展开状态的章节ID
   const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
   // 扁平化的目录数据
@@ -42,11 +44,12 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, onItemPress }) => {
       items: TocItem[], 
       level: number = 0, 
       parent: string = 'root',
-      isVisible: boolean = true
+      isVisible: boolean = true,
     ) => {
       items.forEach((item, index) => {
         const id = `${parent}-${index}`;
         const hasChildren = !!(item.subitems && item.subitems.length > 0);
+        const isActive = item.href === currentChapter;
         
         flattened.push({
           ...item,
@@ -54,7 +57,8 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, onItemPress }) => {
           level,
           parent,
           hasChildren,
-          isVisible
+          isVisible,
+          isActive,
         });
         
         if (hasChildren && item.subitems) {
@@ -67,7 +71,7 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, onItemPress }) => {
     
     flattenToc(toc);
     setFlattenedToc(flattened);
-  }, [toc, expandedChapters]);
+  }, [toc, expandedChapters, currentChapter]);
 
   // 切换章节展开/折叠状态
   const toggleChapter = (id: string) => {
@@ -113,7 +117,8 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, onItemPress }) => {
           style={[
             styles.label, 
             { color: textColor },
-            item.hasChildren && styles.chapterTitle
+            item.hasChildren && styles.chapterTitle,
+            item.isActive && styles.activeChapter
           ]}
         >
           {cleanTocLabel(item.label)}
@@ -154,6 +159,9 @@ const styles = StyleSheet.create({
   },
   chapterTitle: {
     fontWeight: 'bold',
+  },
+  activeChapter: {
+    color: colors.chapterHighlight,
   },
   icon: {
     marginRight: 4,

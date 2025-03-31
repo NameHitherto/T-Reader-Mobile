@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { StatusBar ,View, TouchableOpacity, StyleSheet, Dimensions, BackHandler, AppState, AppStateStatus, Text, TextInput, FlatList } from 'react-native';
 import RNFS from 'react-native-fs';
-import { Reader, useReader } from '@epubjs-react-native/core';
+import { Location, Reader, Section, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { saveFile, webdavGet, webdavUpload, askQuestion, getEpubContent } from '../utils/fileUtils';
 import { Buffer } from 'buffer';
@@ -33,6 +33,8 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
       setIsModalVisible(false);
     }
   };
+  // 当前章节
+  const [currentChapter, setCurrentChapter] = useState<string>('');
 
   // 字体修改菜单状态
   const [isFontFamilyVisible, setIsFontFamilyVisible] = useState(false);
@@ -95,7 +97,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   }, [readerStyle]);
   
   const { bookId } = route.params;
-  const { goNext, goPrevious, getCurrentLocation, goToLocation, changeTheme, changeFontSize, changeFontFamily, toc, getMeta } = useReader();
+  const { goNext, goPrevious, goToLocation, changeTheme, changeFontSize, changeFontFamily, toc, getMeta } = useReader();
   // 保存书籍加载时的阅读进度
   const readerLocation = useRef<string | undefined>(undefined);
   // 节流间隔，单位为毫秒
@@ -177,11 +179,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   };
 
   // 处理翻页/阅读位置变化
-  const handleLocationChanged = () => {
+  const handleLocationChanged = (totalLocation: number, currentLocation: Location, progress: number, currentSection: Section | null) => {
     // 更新阅读位置
-    const location = getCurrentLocation()?.end.cfi;
+    const location = currentLocation?.end.cfi;
     readerLocation.current = location;
-    // 更新阅读百分比等信息
+    // 更新当前章节
+    setCurrentChapter(currentSection?.href || '');
+    // 更新阅读百分比等信息, currentLocation中包含进度百分比信息
   };
 
   // 处理阅读器加载完成
@@ -312,11 +316,6 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     });
   };
 
-  // 删除目录标签中多余的空格和换行符
-  const cleanTocLabel = (label: string): string => {
-    return label.replace(/\s+/g, ' ').trim();
-  }
-
   // 切换日间/夜间模式
   const toggleMode = () => {
     setReaderStyle(prev => ({
@@ -385,7 +384,10 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
           allowScriptedContent={true}
           allowPopups={true}
           onLocationsReady={handleLocationReady}
-          onLocationChange={handleLocationChanged}
+          onLocationChange={
+            (totalLocation, currentLocation, progress, currentSection) => 
+              handleLocationChanged(totalLocation, currentLocation, progress, currentSection)
+          }
           renderOpeningBookComponent={() => 
             <LoadingAnimation 
               isVisible={true} 
@@ -703,7 +705,9 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
               <TocList
                 toc={toc}
                 textColor={readerStyle.color}
+                currentChapter={currentChapter}
                 onItemPress={(href) => {
+                  setCurrentChapter(href);
                   goToLocation(href);
                   toggleToc();
                 }}

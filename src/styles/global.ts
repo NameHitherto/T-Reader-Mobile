@@ -6,6 +6,8 @@ export const colors = {
     iconStroke: '#888',
     // 图标激活填充色
     iconActive: '#38bdf8',
+    // 章节高亮颜色
+    chapterHighlight: '#0ea5e9',
     // 黑色
     black: '#000',
     // 淡灰色
