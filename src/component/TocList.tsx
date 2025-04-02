@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '../styles/global';
@@ -20,7 +20,7 @@ interface FlattenedTocItem extends TocItem {
   parent: string;
   hasChildren: boolean;
   isVisible: boolean;
-  isActive: boolean;
+  isExpanded: boolean;
 }
 
 interface TocListProps {
@@ -31,59 +31,124 @@ interface TocListProps {
 }
 
 const TocList: React.FC<TocListProps> = ({ toc, textColor, currentChapter, onItemPress }) => {
-  // 追踪展开状态的章节ID
-  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
   // 扁平化的目录数据
-  const [flattenedToc, setFlattenedToc] = useState<FlattenedTocItem[]>([]);
+  const flattenedToc = useRef<FlattenedTocItem[]>([]);
+  // 章节列表，用于触发渲染
+  const [tocList, setTocList] = useState<FlattenedTocItem[]>([]);
+  // FlatList的引用
+  const flatListRef = useRef<FlatList>(null);
+  // FlatList每个章节的高度 - padding(16) * 2 + lineHeight(20) + borderBottom(1) = 53
+  const ITEM_HEIGHT = 53; 
 
+  // 首次加载时初始化数据
   // 将多层级目录扁平化处理，便于FlatList渲染
   useEffect(() => {
-    const flattened: FlattenedTocItem[] = [];
-    
+    flattenedToc.current = [];
+
     const flattenToc = (
       items: TocItem[], 
       level: number = 0, 
       parent: string = 'root',
       isVisible: boolean = true,
+      isExpanded: boolean = false,
     ) => {
       items.forEach((item, index) => {
         const id = `${parent}-${index}`;
         const hasChildren = !!(item.subitems && item.subitems.length > 0);
-        const isActive = item.href === currentChapter;
         
-        flattened.push({
+        flattenedToc.current.push({
           ...item,
           id,
           level,
           parent,
           hasChildren,
           isVisible,
-          isActive,
+          isExpanded,
         });
         
         if (hasChildren && item.subitems) {
-          // 子项是否可见取决于父项是否展开
-          const childrenVisible = isVisible && !!expandedChapters[id];
-          flattenToc(item.subitems, level + 1, id, childrenVisible);
+          // 子项默认不展开
+          flattenToc(item.subitems, level + 1, id, false, false);
         }
       });
     };
-    
+    // 初始化目录
     flattenToc(toc);
-    setFlattenedToc(flattened);
-  }, [toc, expandedChapters, currentChapter]);
+    // 展开当前章节的父章节
+    const currentItem = flattenedToc.current.find(item => item.href === currentChapter);
+    let currentParent = currentItem?.parent;
+    while (currentParent && currentParent !== 'root') {
+      flattenedToc.current.map((item) => {
+        if (item.id.startsWith(currentParent + '-')) {
+          item.isVisible = true;
+        }
+      });
+      const upperParent = flattenedToc.current.find((item) => {
+        if (item.id === currentParent) {
+          item.isVisible = true;
+          item.isExpanded = true;
+          return item;
+        }
+      })
+      currentParent = upperParent?.parent;
+    }
+    // 渲染目录数据
+    setTocList(flattenedToc.current);
+    // 滚动到当前章节
+    handleScrollToIndex();
+  }, []);
 
   // 切换章节展开/折叠状态
   const toggleChapter = (id: string) => {
-    setExpandedChapters(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+    const toc = flattenedToc.current.find(item => item.id === id);
+    if (!toc) return;
+    if (toc.isExpanded) {
+      // 此时折叠章节
+      toc.isExpanded = false;
+      flattenedToc.current.map((item) => {
+        if (item.id.startsWith(id + '-')) {
+          item.isVisible = false;
+          item.isExpanded = false;
+        }
+      })
+    } else {
+      // 此时展开章节
+      toc.isExpanded = true;
+      flattenedToc.current.map((item) => {
+        if (item.parent === id) {
+          item.isVisible = true;
+        }
+      })
+    }
+    // 更新章节列表
+    setTocList([...flattenedToc.current]);
   };
 
   // 清理标签文本
   const cleanTocLabel = (label: string): string => {
     return label.replace(/\s+/g, ' ').trim();
+  };
+
+  // 滚动到当前章节
+  const handleScrollToIndex = () => {
+    const index = flattenedToc.current.filter(item => item.isVisible).findIndex(item => item.href === currentChapter);
+    if (index === -1 || !flatListRef.current) return;
+    
+    setTimeout(() => {
+      try {
+        if (flatListRef.current) {
+          flatListRef.current.scrollToIndex({
+            index,
+            animated: false,
+            viewPosition: 0,
+          });
+        } else {
+          handleScrollToIndex();
+        }
+      } catch (error) {
+        console.log('Failed to scroll:', error);
+      }
+    }, 500); 
   };
 
   const renderItem = ({ item }: { item: FlattenedTocItem }) => {
@@ -107,7 +172,7 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, currentChapter, onIte
           <Svg width="16" height="16" viewBox="0 0 24 24" style={styles.icon}>
             <Path 
               fill={textColor} 
-              d={expandedChapters[item.id] 
+              d={item.isExpanded 
                 ? "M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" 
                 : "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"} 
             />
@@ -118,7 +183,7 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, currentChapter, onIte
             styles.label, 
             { color: textColor },
             item.hasChildren && styles.chapterTitle,
-            item.isActive && styles.activeChapter
+            item.href === currentChapter && styles.activeChapter
           ]}
         >
           {cleanTocLabel(item.label)}
@@ -129,12 +194,16 @@ const TocList: React.FC<TocListProps> = ({ toc, textColor, currentChapter, onIte
 
   return (
     <FlatList
-      data={flattenedToc.filter(item => item.isVisible)}
+      ref={flatListRef}
+      data={tocList.filter(item => item.isVisible)}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
       initialNumToRender={20}
       windowSize={10}
       maxToRenderPerBatch={20}
+      getItemLayout={(data, index) => (
+        { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index } 
+      )}
     />
   );
 };
