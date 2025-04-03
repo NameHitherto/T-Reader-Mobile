@@ -116,6 +116,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     {key: 'Georgia, serif', label: 'Georgia'},
   ];
 
+  // 组件挂载时
   useEffect(() => {
     // 加载书籍的信息
     loadBook();
@@ -130,7 +131,10 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     // 定时监听音量键事件
     const keyCodeInterval = setInterval(handleVolumeKeyPress, THROTTLE_INTERVAL);
 
+    // 组件卸载前
     return () => {
+      // 保存阅读进度
+      saveReaderLocation();
       // 移除监听器
       backHandler.remove();
       appStateListener.remove();
@@ -155,13 +159,8 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
 
   // 处理返回键事件
   const handleBackPress = () => {
-    // 保存阅读进度
-    saveReaderLocation().then(() => {
-      if(route.name === 'Reader') {
-        // 返回HomeScreen
-        navigation.navigate('Home');
-      }
-    });
+    // 返回HomeScreen
+    navigation.navigate('Home');
     return true;
   };
 
@@ -181,7 +180,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
   // 处理翻页/阅读位置变化
   const handleLocationChanged = (totalLocation: number, currentLocation: Location, progress: number, currentSection: Section | null) => {
     // 更新阅读位置
-    const location = currentLocation?.end.cfi;
+    const location = currentLocation?.start.cfi;
     readerLocation.current = location;
     // 更新当前章节
     setCurrentChapter(currentSection?.href || '');
@@ -383,7 +382,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
           height={Dimensions.get('window').height}
           allowScriptedContent={true}
           allowPopups={true}
-          onLocationsReady={handleLocationReady}
+          onReady={handleLocationReady}
           onLocationChange={
             (totalLocation, currentLocation, progress, currentSection) => 
               handleLocationChanged(totalLocation, currentLocation, progress, currentSection)
