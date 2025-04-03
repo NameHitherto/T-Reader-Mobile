@@ -1,4 +1,4 @@
-import RNFS from 'react-native-fs';
+import * as RNFS from '@dr.pogodin/react-native-fs';
 import { DOMParser } from 'xmldom';
 import { Buffer } from 'buffer';
 import { Setting, ModelRequestOptions, ModelMessage } from '../constant/type.map';

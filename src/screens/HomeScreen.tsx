@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { StatusBar ,View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Animated, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import DocumentPicker from 'react-native-document-picker';
 import { saveFile, loadBooks, deleteBook, webdavSyncFiles, webdavUpload, webdavUploadFile } from '../utils/fileUtils';
-import RNFS, { readFile } from 'react-native-fs';
+import * as RNFS from '@dr.pogodin/react-native-fs';
 import { unzip } from 'react-native-zip-archive';
 import { DOMParser } from 'xmldom';
 import Svg, { Path } from 'react-native-svg';
@@ -92,7 +92,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
       // 开始将文件上传到 WebDAV 服务器
       setLoadingMessage('解析文件中...');
-      const base64File = await readFile(selectedFilePath, 'base64');
+      const base64File = await RNFS.readFile(selectedFilePath, 'base64');
 
       await RNFS.writeFile(newBookPath, base64File, 'base64');
 
