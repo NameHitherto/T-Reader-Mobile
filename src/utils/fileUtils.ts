@@ -155,6 +155,8 @@ export const webdavDelete = async (filename: string) => {
 export const webdavSyncFiles = async (directory?: string) => {
   const { WEBDAV_URL, WEBDAV_USER, WEBDAV_PASS } = await getDirectSetting();
   if (!WEBDAV_URL) return;
+  
+  // 获取云端文件列表
   const response = await fetch(WEBDAV_URL, {
     method: 'PROPFIND',
     headers: {
@@ -168,45 +170,124 @@ export const webdavSyncFiles = async (directory?: string) => {
   }
 
   const text = await response.text();
-
-  const files = parseWebdavResponse(text);
-
+  // 解析云端文件列表
+  const cloudFiles = parseWebdavResponse(text);
+  
+  // 获取本地目录路径
   const booksDir = directory ? `${directory}/T-Reader` : `${RNFS.DocumentDirectoryPath}/T-Reader`;
-
+  
+  // 确保本地目录存在
   if (!(await RNFS.exists(booksDir))) {
     await RNFS.mkdir(booksDir);
-  } else {
-    // 清理目录旧文件
-    // 找到并删除所有后缀为epub的文件和与其同名的json文件
-    const files = await RNFS.readDir(booksDir);
-    await Promise.all(files.map(async file => {
-      if (file.name.endsWith('.epub')) {
-        await RNFS.unlink(file.path);
-        // 删除同名json文件
-        await RNFS.unlink(file.path.slice(0, -5) + '.json');
-      }
-    }));
   }
-
-  await Promise.all(files.map(async file => {
-    const fileUrl = `${WEBDAV_URL}${file}`;
-    const fileResponse = await fetch(fileUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': 'Basic ' + btoa(`${WEBDAV_USER}:${WEBDAV_PASS}`)
-      }
-    });
-
-    if (!fileResponse.ok) {
-      throw new Error('下载文件失败');
+  
+  // 获取本地文件列表
+  const localFilesInfo = await RNFS.readDir(booksDir);
+  const localFiles = localFilesInfo.map(file => file.name);
+  
+  // 创建用于保存云端与本地文件映射的对象
+  const cloudEpubFiles = new Set<string>();
+  const cloudJsonFiles = new Set<string>();
+  const localEpubFiles = new Set<string>();
+  const localJsonFiles = new Set<string>();
+  
+  // 分类云端文件
+  cloudFiles.forEach(fileName => {
+    if (fileName.endsWith('.epub')) {
+      cloudEpubFiles.add(fileName);
+    } else if (fileName.endsWith('.json')) {
+      cloudJsonFiles.add(fileName);
     }
-
-    const contents = await fileResponse.arrayBuffer();
-    const filePath = `${booksDir}/${file}`;
-    const base64Contents = arrayBufferToBase64(contents);
-    await RNFS.writeFile(filePath, base64Contents, 'base64');
-    console.log(`文件 '${filePath}' 下载并保存成功。`);
-  }));
+  });
+  
+  // 分类本地文件
+  localFiles.forEach(fileName => {
+    if (fileName.endsWith('.epub')) {
+      localEpubFiles.add(fileName);
+    } else if (fileName.endsWith('.json')) {
+      localJsonFiles.add(fileName);
+    }
+  });
+  
+  // 处理同步逻辑
+  const syncPromises = [];
+  
+  // 处理本地和云端都有的epub文件 - 只需要下载json文件覆盖本地
+  for (const epubFile of localEpubFiles) {
+    if (cloudEpubFiles.has(epubFile)) {
+      // 情况1: 两边都有epub，下载云端json覆盖本地json
+      const jsonFile = epubFile.replace('.epub', '.json');
+      if (cloudJsonFiles.has(jsonFile)) {
+        // 下载云端json文件
+        syncPromises.push(
+          (async () => {
+            try {
+              const jsonContent = await webdavGet(jsonFile);
+              const base64Content = arrayBufferToBase64(jsonContent.buffer);
+              await RNFS.writeFile(`${booksDir}/${jsonFile}`, base64Content, 'base64');
+              console.log(`同步: 两边都有 ${epubFile}，已下载云端的JSON覆盖本地`);
+            } catch (error) {
+              console.error(`下载JSON文件 ${jsonFile} 失败:`, error);
+            }
+          })()
+        );
+      }
+    } else {
+      // 情况2: 本地有而云端没有，上传epub和json到云端
+      syncPromises.push(
+        (async () => {
+          try {
+            // 上传epub文件
+            const epubPath = `${booksDir}/${epubFile}`;
+            const epubContent = await RNFS.readFile(epubPath, 'base64');
+            await webdavUploadFile(epubFile, epubContent);
+            
+            // 上传对应的json文件
+            const jsonFile = epubFile.replace('.epub', '.json');
+            if (localJsonFiles.has(jsonFile)) {
+              const jsonPath = `${booksDir}/${jsonFile}`;
+              const jsonContent = await RNFS.readFile(jsonPath, 'utf8');
+              await webdavUpload(jsonFile, jsonContent);
+            }
+            console.log(`同步: 上传本地 ${epubFile} 及其JSON到云端`);
+          } catch (error) {
+            console.error(`上传文件 ${epubFile} 失败:`, error);
+          }
+        })()
+      );
+    }
+  }
+  
+  // 情况3: 云端有而本地没有的epub文件，下载到本地
+  for (const epubFile of cloudEpubFiles) {
+    if (!localEpubFiles.has(epubFile)) {
+      syncPromises.push(
+        (async () => {
+          try {
+            // 下载epub文件
+            const epubContent = await webdavGet(epubFile);
+            const base64Content = arrayBufferToBase64(epubContent.buffer);
+            await RNFS.writeFile(`${booksDir}/${epubFile}`, base64Content, 'base64');
+            
+            // 下载对应的json文件
+            const jsonFile = epubFile.replace('.epub', '.json');
+            if (cloudJsonFiles.has(jsonFile)) {
+              const jsonContent = await webdavGet(jsonFile);
+              const base64JsonContent = arrayBufferToBase64(jsonContent.buffer);
+              await RNFS.writeFile(`${booksDir}/${jsonFile}`, base64JsonContent, 'base64');
+            }
+            console.log(`同步: 下载云端 ${epubFile} 及其JSON到本地`);
+          } catch (error) {
+            console.error(`下载文件 ${epubFile} 失败:`, error);
+          }
+        })()
+      );
+    }
+  }
+  
+  // 等待所有同步操作完成
+  await Promise.all(syncPromises);
+  console.log('文件同步完成');
 };
 
 /**
