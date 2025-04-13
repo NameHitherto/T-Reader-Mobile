@@ -20,6 +20,7 @@ type HomeScreenProps = {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [isBooksLoaded, setIsBooksLoaded] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingType, setLoadingType] = useState<AnimationType>('roxy');
   const [loadingMessage, setLoadingMessage] = useState<string>('');
@@ -42,8 +43,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
   const loadBooksFromFileSystem = async () => {
     try {
+      console.log('开始加载书籍...');
+      setIsBooksLoaded(false);
       const loadedBooks = await loadBooks();
       setBooks(loadedBooks);
+      setIsBooksLoaded(true);
     } catch (error) {
       console.error('Error loading books:', error);
     }
@@ -216,6 +220,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
   // 删除书籍
   const handleBookDel = async(bookId: string) => {
+    setIsBottomSheetVisible(false);
     await deleteBook(bookId);
     await loadBooksFromFileSystem();
   };
@@ -256,7 +261,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
                 >
                   <Image defaultSource={require('../assets/default_cover.png')} source={{ uri: item.cover }} style={styles.bookCover} />
                 </TouchableOpacity>
-                <Text style={styles.bookTitle}>{item.title}</Text>
+                <Text 
+                  style={styles.bookTitle}
+                  numberOfLines={2}
+                  ellipsizeMode='tail'
+                >
+                  {item.title}
+                </Text>
+              </View>
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.bookEmptyContainer}>
+                <Image
+                  style={styles.bookEmptyImage}
+                  source={isBooksLoaded ? require('../assets/book_empty.png') : require('../assets/book_load.png')}
+                />
+                <Text style={styles.bookEmptyText}>
+                  {isBooksLoaded ? '开始添加新书吧' : '正在整理书架~'}
+                </Text>
               </View>
             )}
             numColumns={3}
@@ -372,7 +394,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     fontSize: 14,
     width: 100,
+    height: 36,
+    lineHeight: 18,
+    fontWeight: '500',
   },
+  bookEmptyContainer: {
+    height: Dimensions.get('window').height - 130, // 保守计算页眉和页脚的高度和
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bookEmptyImage: {
+    width: 150,
+    height: 150,
+    resizeMode: 'contain',
+  },
+  bookEmptyText: {
+    fontSize: 18,
+    color: colors.darkGrey,
+    marginTop: 10,
+  }
 });
 // 底部选项卡样式
 const bottomSheetModalStyles = StyleSheet.create({

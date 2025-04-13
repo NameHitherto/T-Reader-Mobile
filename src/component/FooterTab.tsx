@@ -20,6 +20,7 @@ const FooterTab: React.FC<FooterTabProps> = ({activeTab, onTabPress}) => {
                 <TouchableOpacity
                     key={tab.key}
                     onPress={() => onTabPress && onTabPress(tab.key)}
+                    activeOpacity={1}
                 >
                     <View style={styles.tab}>
                         <Svg
@@ -31,7 +32,7 @@ const FooterTab: React.FC<FooterTabProps> = ({activeTab, onTabPress}) => {
                                 d={tab.path}
                                 fill={activeTab === tab.key ? colors.iconActive : 'none'}
                                 stroke={colors.iconStroke}
-                                strokeWidth={activeTab === tab.key ? 0 : 36}
+                                strokeWidth={activeTab === tab.key ? 0 : 28}
                             />
                         </Svg>
                         <Text style={styles.tabText}>{tab.text}</Text>
@@ -63,6 +64,7 @@ const styles = StyleSheet.create({
     tabText: {
         textAlign: 'center',
         fontSize: 12,
+        color: colors.darkGrey,
     }
 });
 

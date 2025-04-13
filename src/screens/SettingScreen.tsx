@@ -35,7 +35,6 @@ const SettingScreen: React.FC<SettingScreenProps> = ({navigation}) => {
     useEffect(() => {
         // 读取配置
         readSetting().then((setting) => {
-            console.log(setting);
             if (setting) {
                 setSyncBaseUrl(setting.WEBDAV_BASE_URL || '');
                 onChangeWebdavFolder(setting.WEBDAV_FOLDER || '');
