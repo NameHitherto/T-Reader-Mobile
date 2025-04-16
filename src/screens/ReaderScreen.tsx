@@ -204,6 +204,18 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
     applyReaderStyle();
   };
 
+  // 处理目录章节点击事件
+  const handleChapterPress = (href: string) => {
+    let f_href = href;
+    // href首字符不能为'/'，否则无法正常跳转
+    if (href.startsWith('/')) {
+      f_href = href.substring(1);
+    }
+    setCurrentChapter(href);
+    goToLocation(f_href);
+    toggleToc();
+  };
+
   const loadBook = async () => {
     console.log('loadBooking', bookId);
     try {
@@ -276,6 +288,15 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
       body: {
         'background': `${readerStyle.backgroundColor}`,
         'padding': `${readerStyle.padding}px`,
+      },
+      h1: {
+        'color': `${readerStyle.color}`,
+      },
+      h2: {
+        'color': `${readerStyle.color}`,
+      },
+      h3: {
+        'color': `${readerStyle.color}`,
       },
       p: {
         'color': `${readerStyle.color}`,
@@ -705,11 +726,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({navigation, route}) => {
                 toc={toc}
                 textColor={readerStyle.color}
                 currentChapter={currentChapter}
-                onItemPress={(href) => {
-                  setCurrentChapter(href);
-                  goToLocation(href);
-                  toggleToc();
-                }}
+                onItemPress={(href) => handleChapterPress(href)}
               />
             </View>
           </View>
@@ -879,6 +896,7 @@ const styleModalStyles = StyleSheet.create({
     width: 30,
     height: 26,
     alignItems: 'center',
+    zIndex: 1,
   },
 });
 // AI助手
