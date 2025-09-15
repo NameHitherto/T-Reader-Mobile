@@ -6,7 +6,7 @@
 
 ## 开发
 >**注意**: 首先确保你已完成React Native中的[环境搭建](https://reactnative.cn/docs/environment-setup)环节。
-本项目使用的`Java`版本是**17.0.16-oracle**，`node`版本为**22.17.1**,`React Native`版本为**0.76**。
+本项目使用的`Java`版本是**17.0.16-oracle**,`node`版本为**22.17.1**,`React Native`版本为**0.76**,`@dr.pogodin/react-native-fs`版本为**2.30.3**。
 
 >**注意**: 以下所有命令默认都在项目根目录下运行。
 1. 安装Yarn，`npm install -g yarn`，运行`npm install -g react-native-cli`。

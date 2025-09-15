@@ -233,23 +233,18 @@ export const webdavSyncFiles = async (directory?: string) => {
         );
       }
     } else {
-      // 情况2: 本地有而云端没有，上传epub和json到云端
+      // 情况2: 本地有而云端没有，删除本地的epub和json文件
       syncPromises.push(
         (async () => {
           try {
-            // 上传epub文件
+            // 删除epub文件
             const epubPath = `${booksDir}/${epubFile}`;
-            const epubContent = await RNFS.readFile(epubPath, 'base64');
-            await webdavUploadFile(epubFile, epubContent);
-            
-            // 上传对应的json文件
+            await RNFS.unlink(epubPath);
+            console.log(`同步: 删除本地 ${epubFile}`);
+            // 删除对应的json文件
             const jsonFile = epubFile.replace('.epub', '.json');
-            if (localJsonFiles.has(jsonFile)) {
-              const jsonPath = `${booksDir}/${jsonFile}`;
-              const jsonContent = await RNFS.readFile(jsonPath, 'utf8');
-              await webdavUpload(jsonFile, jsonContent);
-            }
-            console.log(`同步: 上传本地 ${epubFile} 及其JSON到云端`);
+            await RNFS.unlink(`${booksDir}/${jsonFile}`);
+            console.log(`同步: 删除本地 ${jsonFile}`);
           } catch (error) {
             console.error(`上传文件 ${epubFile} 失败:`, error);
           }
