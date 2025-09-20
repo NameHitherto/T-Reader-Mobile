@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { StatusBar ,View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Animated, TouchableWithoutFeedback, Dimensions } from 'react-native';
-import DocumentPicker from 'react-native-document-picker';
+import { pick } from '@react-native-documents/picker';
 import { saveFile, loadBooks, deleteBook, webdavSyncFiles, webdavUpload, webdavUploadFile } from '../utils/fileUtils';
 import * as RNFS from '@dr.pogodin/react-native-fs';
 import { unzip } from 'react-native-zip-archive';
@@ -72,7 +72,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
   const addBook = async () => {
     try {
-      const res = await DocumentPicker.pick({
+      const res = await pick({
         type: ['application/epub+zip'],
         allowMultiSelection: false,
       });
@@ -174,11 +174,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     } catch (err) {
       setLoading(false);
       console.log(err);
-      if (DocumentPicker.isCancel(err)) {
-        console.log('User cancelled the picker');
-      } else {
-        throw err;
-      }
     }
   };
 
